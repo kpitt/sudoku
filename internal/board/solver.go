@@ -3,6 +3,8 @@ package board
 import (
 	"fmt"
 	"os"
+
+	"github.com/fatih/color"
 )
 
 // Solve attempts to solve a Sudoku puzzle by repeatedly applying known solving
@@ -10,7 +12,11 @@ import (
 // is completely solved, or until no more candidates can be eliminated (partial
 // solution).
 func (b *Board) Solve() {
+	var pass int
 	for !b.IsSolved() {
+		pass = pass + 1
+		color.HiYellow("Solver Pass %d:", pass)
+
 		// "Naked Single" and "Hidden Single" are the only patterns that detect
 		// an exact solution for a given cell.
 
@@ -48,6 +54,7 @@ func (b *Board) Solve() {
 		// out of the solver loop with a partial solution.
 		break
 	}
+	color.HiYellow("Total Solver Passes: %d", pass)
 }
 
 // findNakedSingles locks the value of any cells that match the "Naked Single"
