@@ -21,6 +21,28 @@ func (b *Board) Solve() {
 			continue
 		}
 
+		// The remaining patterns are used to eliminate candidate values.
+		// Patterns are processed in increasing order of how complex the pattern
+		// is to detect.  If a pattern eliminates at least one candidate, then
+		// we go back check the simplest patterns again.  Otherwise, we move on
+		// to the next pattern.
+
+		if b.findNakedOrHiddenPairs() {
+			continue
+		}
+		if b.findLockedCandidates() {
+			continue
+		}
+		if b.findPointingTuples() {
+			continue
+		}
+		if b.findNakedOrHiddenTriples() {
+			continue
+		}
+		if b.findXWings() {
+			continue
+		}
+
 		// If we were unable to find any of the known patterns, then we've
 		// eliminated as many candidates as we can.  All we can do now is break
 		// out of the solver loop with a partial solution.
@@ -81,6 +103,31 @@ func (b *Board) findHiddenSingles() bool {
 			}
 		}
 	}
+	return found
+}
+
+func (b *Board) findNakedOrHiddenPairs() bool {
+	found := false
+	return found
+}
+
+func (b *Board) findLockedCandidates() bool {
+	found := false
+	return found
+}
+
+func (b *Board) findPointingTuples() bool {
+	found := false
+	return found
+}
+
+func (b *Board) findNakedOrHiddenTriples() bool {
+	found := false
+	return found
+}
+
+func (b *Board) findXWings() bool {
+	found := false
 	return found
 }
 
