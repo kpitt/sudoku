@@ -34,7 +34,7 @@ func (b *Board) Read() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fatalError("error reading standard input: " + err.Error())
+		fatalError("error reading standard input", err.Error())
 	}
 }
 
@@ -45,15 +45,6 @@ func (b *Board) processRow(row int, line string) {
 			b.FixValue(row, col, int8(val))
 		}
 	}
-}
-
-func boardStateError(msg string) {
-	fatalError("invalid board state: " + msg)
-}
-
-func fatalError(msg string) {
-	fmt.Fprintf(os.Stderr, "error: invalid board state: %s\n", msg)
-	os.Exit(1)
 }
 
 func isStdinTTY() bool {

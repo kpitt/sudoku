@@ -1,7 +1,19 @@
 package board
 
+import (
+	"fmt"
+	"os"
+)
+
+// Solve attempts to solve a Sudoku puzzle by repeatedly applying known solving
+// patterns to find solved cells and eliminate candidate values until the puzzle
+// is completely solved, or until no more candidates can be eliminated (partial
+// solution).
 func (b *Board) Solve() {
 	for !b.IsSolved() {
+		// "Naked Single" and "Hidden Single" are the only patterns that detect
+		// an exact solution for a given cell.
+
 		if b.findNakedSingles() {
 			continue
 		}
@@ -9,13 +21,15 @@ func (b *Board) Solve() {
 			continue
 		}
 
-		// If none of our known techniques was able to reduce the possible
-		// candidates, then we've solved as much as we can, so all we can do
-		// is break out of the solver loop.
+		// If we were unable to find any of the known patterns, then we've
+		// eliminated as many candidates as we can.  All we can do now is break
+		// out of the solver loop with a partial solution.
 		break
 	}
 }
 
+// findNakedSingles locks the value of any cells that match the "Naked Single"
+// pattern.  A "Naked Single" is a cell that has only one possible value.
 func (b *Board) findNakedSingles() bool {
 	found := false
 	for r := range 9 {
@@ -25,13 +39,51 @@ func (b *Board) findNakedSingles() bool {
 				val := cell.Candidates()[0]
 				b.LockValue(r, c, val)
 				found = true
+				printFound("Naked Single", r, c, val)
 			}
 		}
 	}
 	return found
 }
 
+// findHiddenSingles locks the value of any cells that match the "Hidden Single"
+// pattern.  A "Hidden Single" is the only cell that contains a particular
+// candidate in its row, column, or house.
 func (b *Board) findHiddenSingles() bool {
 	found := false
+	lockValue := func(r, c int, val int8, groupType string) {
+		b.LockValue(r, c, val)
+		found = true
+		pattern := fmt.Sprintf("Hidden Single (%s)", groupType)
+		printFound(pattern, r, c, val)
+	}
+	for i := range 9 {
+		row := b.rowGroups[i]
+		for val, locs := range row.Unsolved() {
+			if locs.Size() == 1 {
+				cols := locs.Values()
+				lockValue(i, cols[0], val, "Row")
+			}
+		}
+		col := b.colGroups[i]
+		for val, locs := range col.Unsolved() {
+			if locs.Size() == 1 {
+				rows := locs.Values()
+				lockValue(rows[0], i, val, "Column")
+			}
+		}
+		house := b.houseGroups[i]
+		for val, locs := range house.Unsolved() {
+			if locs.Size() == 1 {
+				cells := locs.Values()
+				r, c := getHouseCellLoc(i, cells[0])
+				lockValue(r, c, val, "House")
+			}
+		}
+	}
 	return found
+}
+
+func printFound(pattern string, r, c int, val int8) {
+	fmt.Fprintf(os.Stderr, "%s: (%d,%d) = %d\n", pattern, r, c, val)
 }

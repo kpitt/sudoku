@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/fatih/color"
 	"github.com/kpitt/sudoku/internal/board"
 )
 
@@ -13,9 +12,9 @@ func main() {
 	b.Solve()
 
 	if b.IsSolved() {
-		fmt.Println("Solution:")
+		color.HiWhite("\nSolution:")
 	} else {
-		fmt.Println("Partial Solution:")
+		color.HiWhite("\nPartial Solution:")
 	}
 	b.Print()
 }

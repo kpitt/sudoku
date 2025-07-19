@@ -1,9 +1,10 @@
 package board
 
 type Cell struct {
+	IsFixed bool
+
 	value      int8
 	candidates *Set[int8]
-	isFixed    bool
 }
 
 func NewCell() *Cell {
@@ -22,11 +23,7 @@ func (c *Cell) LockedValue() int8 {
 
 func (c *Cell) LockValue(val int8) {
 	c.value = val
-}
-
-func (c *Cell) FixValue(val int8) {
-	c.value = val
-	c.isFixed = true
+	c.candidates.Clear()
 }
 
 func (c *Cell) NumCandidates() int {
@@ -34,7 +31,7 @@ func (c *Cell) NumCandidates() int {
 }
 
 func (c *Cell) Candidates() []int8 {
-	return c.candidates.Elements()
+	return c.candidates.Values()
 }
 
 func (c *Cell) IsCandidate(val int8) bool {

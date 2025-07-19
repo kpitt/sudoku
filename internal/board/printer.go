@@ -2,7 +2,6 @@ package board
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/fatih/color"
 )
@@ -14,6 +13,11 @@ const (
 	dividerMajor = "╞═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╡"
 	edgeMinor    = "│"
 	edgeMajor    = "║"
+)
+
+var (
+	lockedValueColor = color.New(color.Bold, color.FgHiWhite)
+	fixedValueColor  = color.New(color.Bold, color.FgHiYellow, color.BgHiBlack)
 )
 
 func (b *Board) Print() {
@@ -45,26 +49,20 @@ func printCandidateRow(row [9]*Cell, candidateRow int) {
 			fmt.Print(color.HiWhiteString(edgeMinor))
 		}
 		if cell.IsLocked() {
+			cellColor := lockedValueColor
+			if cell.IsFixed {
+				cellColor = fixedValueColor
+			}
 			if candidateRow == 1 {
-				fmt.Print(color.HiWhiteString(" %s ", cell.lockedValueString()))
+				cellColor.Printf(" %d ", cell.LockedValue())
 			} else {
-				fmt.Print("   ")
+				cellColor.Print("   ")
 			}
 		} else {
 			cell.printCandidates(candidateRow)
 		}
 	}
 	color.HiWhite(edgeMinor)
-}
-
-func (c *Cell) lockedValueString() string {
-	valStr := strconv.Itoa(int(c.value))
-	if c.isFixed {
-		return color.HiYellowString(valStr)
-	} else {
-		return color.HiWhiteString(valStr)
-
-	}
 }
 
 func (c *Cell) printCandidates(candidateRow int) {
