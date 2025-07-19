@@ -8,8 +8,13 @@ import (
 )
 
 type Board struct {
-	cells         [9][9]*Cell
-	unlockedCount int
+	cells [9][9]*Cell
+
+	// Holds counts of how many of each digit still needs to be placed.  If the
+	// count for a digit reaches 0, then that digit is completely solved.
+	// Index 0 holds the total count of unsolved cells on the board.  When this
+	// value reaches 0, the puzzle is completely solved.
+	unsolvedCounts [10]int
 
 	rowGroups   [9]*Group
 	colGroups   [9]*Group
@@ -17,7 +22,7 @@ type Board struct {
 }
 
 func NewBoard() *Board {
-	b := &Board{unlockedCount: 9 * 9}
+	b := &Board{}
 	for r := range 9 {
 		for c := range 9 {
 			b.cells[r][c] = NewCell()
@@ -30,11 +35,24 @@ func NewBoard() *Board {
 		b.houseGroups[i] = NewGroup()
 	}
 
+	for digit := range 10 {
+		if digit == 0 {
+			// Digit 0 represents the total count of unsolved cells.
+			b.unsolvedCounts[digit] = 9 * 9
+		} else {
+			b.unsolvedCounts[digit] = 9
+		}
+	}
+
 	return b
 }
 
 func (b *Board) IsSolved() bool {
-	return b.unlockedCount == 0
+	return b.unsolvedCounts[0] == 0
+}
+
+func (b *Board) IsDigitSolved(digit int8) bool {
+	return b.unsolvedCounts[digit] == 0
 }
 
 func (b *Board) FixValue(r, c int, val int8) {
@@ -53,7 +71,11 @@ func (b *Board) LockValue(r, c int, val int8) {
 	}
 
 	cell.LockValue(val)
-	b.unlockedCount = b.unlockedCount - 1
+	b.unsolvedCounts[0] = b.unsolvedCounts[0] - 1
+	b.unsolvedCounts[val] = b.unsolvedCounts[val] - 1
+	if b.unsolvedCounts[val] < 0 {
+		boardStateError(fmt.Sprintf("too many instances of digit %d when locking cell (%d,%d)", val, r, c))
+	}
 	b.eliminateCandidates(r, c, val)
 }
 

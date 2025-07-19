@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/fatih/color"
 	"github.com/kpitt/sudoku/internal/board"
 )
@@ -17,4 +19,9 @@ func main() {
 		color.HiWhite("\nPartial Solution:")
 	}
 	b.Print()
+
+	if !b.IsSolved() {
+		fmt.Println()
+		b.PrintUnsolvedCounts()
+	}
 }

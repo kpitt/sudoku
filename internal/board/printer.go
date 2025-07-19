@@ -35,6 +35,18 @@ func (b *Board) Print() {
 	color.HiWhite(borderBot)
 }
 
+func (b *Board) PrintUnsolvedCounts() {
+	color.HiWhite("Unsolved Digits:")
+	for i := range 9 {
+		digit := int8(i + 1)
+		if !b.IsDigitSolved(digit) {
+			fmt.Printf("%d: %d remaining\n", digit, b.unsolvedCounts[digit])
+		} else {
+			fmt.Printf("%d: complete\n", digit)
+		}
+	}
+}
+
 func printRow(row [9]*Cell) {
 	for cr := range 3 {
 		printCandidateRow(row, cr)
