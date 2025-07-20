@@ -43,3 +43,8 @@ func (c *Cell) IsCandidate(val int8) bool {
 func (c *Cell) RemoveCandidate(val int8) {
 	c.candidates.Remove(val)
 }
+
+func (c *Cell) setFixedValue(val int8) {
+	c.IsFixed = true
+	c.LockValue(val)
+}

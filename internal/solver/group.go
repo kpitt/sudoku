@@ -1,4 +1,4 @@
-package board
+package solver
 
 import "github.com/kpitt/sudoku/internal/set"
 

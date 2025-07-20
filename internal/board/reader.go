@@ -2,20 +2,12 @@ package board
 
 import (
 	"bufio"
-	"fmt"
 	"os"
-
-	"github.com/mattn/go-isatty"
 )
 
-func (b *Board) Read() {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	if isStdinTTY() {
-		fmt.Println("Enter initial board as 9 lines of 9 characters.")
-		fmt.Println("Use any character other than the digits 1-9 for empty cells.")
-		fmt.Println("(Ctrl+D to finish on Unix/Linux, Ctrl+Z then Enter on Windows):")
-	}
+func ReadBoard(f *os.File) *Board {
+	b := NewBoard()
+	scanner := bufio.NewScanner(f)
 
 	r := 0
 	for scanner.Scan() {
@@ -36,21 +28,15 @@ func (b *Board) Read() {
 	if err := scanner.Err(); err != nil {
 		fatalError("error reading standard input", err.Error())
 	}
+
+	return b
 }
 
 func (b *Board) processRow(row int, line string) {
 	for col := range 9 {
 		val := line[col] - 48
 		if val >= 1 && val <= 9 {
-			b.FixValue(row, col, int8(val))
+			b.setFixedValue(row, col, int8(val))
 		}
 	}
-}
-
-func isStdinTTY() bool {
-	return isTerminal(os.Stdin)
-}
-
-func isTerminal(f *os.File) bool {
-	return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
 }

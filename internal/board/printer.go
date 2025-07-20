@@ -22,7 +22,7 @@ var (
 
 func (b *Board) Print() {
 	color.HiWhite(borderTop)
-	for r, row := range b.cells {
+	for r, row := range b.Cells {
 		if r != 0 {
 			if r%3 == 0 {
 				color.HiWhite(dividerMajor)
