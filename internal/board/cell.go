@@ -1,15 +1,17 @@
 package board
 
+import "github.com/kpitt/sudoku/internal/set"
+
 type Cell struct {
 	IsFixed bool
 
 	value      int8
-	candidates *Set[int8]
+	candidates *set.Set[int8]
 }
 
 func NewCell() *Cell {
 	return &Cell{
-		candidates: NewSet[int8](1, 2, 3, 4, 5, 6, 7, 8, 9),
+		candidates: set.NewSet[int8](1, 2, 3, 4, 5, 6, 7, 8, 9),
 	}
 }
 

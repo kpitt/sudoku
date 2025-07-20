@@ -1,4 +1,4 @@
-package board
+package set
 
 // Set represents a collection of unique elements of type T.
 type Set[T comparable] struct {
@@ -41,7 +41,7 @@ func (s *Set[T]) Size() int {
 
 // Clear removes all elements from the set.
 func (s *Set[T]) Clear() {
-	s.elements = make(map[T]struct{})
+	clear(s.elements)
 }
 
 // Values retrieves the values of all elements as a slice.

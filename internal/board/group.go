@@ -1,21 +1,25 @@
 package board
 
+import "github.com/kpitt/sudoku/internal/set"
+
 // A Group represents any row, column, or house that must contain each of the
 // digits from 1 to 9.  Each Group caches information about the remaining cells
 // that are possible locations for each digit, which makes it easier to check
 // for certain patterns.
 type Group struct {
-	unsolved map[int8]*Set[int]
+	unsolved map[int8]LocSet
 }
 
-var emptyLocations = NewSet[int]()
+type LocSet = *set.Set[int]
+
+var emptyLocations = set.NewSet[int]()
 
 func NewGroup() *Group {
 	g := &Group{
-		unsolved: make(map[int8]*Set[int]),
+		unsolved: make(map[int8]LocSet),
 	}
 	for v := int8(1); v <= 9; v = v + 1 {
-		g.unsolved[v] = NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
+		g.unsolved[v] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
 	}
 	return g
 }
@@ -41,7 +45,7 @@ func (g *Group) RemoveCandidateValue(val int8, cell int) {
 	}
 }
 
-func (g *Group) Unsolved() map[int8]*Set[int] {
+func (g *Group) Unsolved() map[int8]LocSet {
 	return g.unsolved
 }
 
@@ -64,7 +68,7 @@ func (g *Group) NumLocations(val int8) int {
 	return 0
 }
 
-func (g *Group) Locations(val int8) *Set[int] {
+func (g *Group) Locations(val int8) LocSet {
 	if loc, ok := g.unsolved[val]; ok {
 		return loc
 	}
