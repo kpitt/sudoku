@@ -28,7 +28,7 @@ func NewSolver(b *board.Board) *Solver {
 }
 
 func (s *Solver) initializeCandidates() {
-	printProgress("Initializing candidates")
+	printProgress("Processing initial board state")
 	b := s.board
 	for r := range 9 {
 		for c := range 9 {
@@ -53,11 +53,10 @@ func (s *Solver) Solve() {
 		color.HiYellow("Solver Pass %d:", pass)
 
 		// "Naked Single" and "Hidden Single" are the only patterns that detect
-		// an exact solution for a given cell.
+		// an exact solution for a given cell.  The "Naked Single" pattern is
+		// checked each time a candidate is removed from a cell, so we only
+		// need to look for the "Hidden Single" pattern here.
 
-		if s.findNakedSingles() {
-			continue
-		}
 		if s.findHiddenSingles() {
 			continue
 		}
@@ -92,9 +91,11 @@ func (s *Solver) Solve() {
 	color.HiYellow("Total Solver Passes: %d", pass)
 }
 
-func (s *Solver) LockValue(r, c int, val int8) {
-	s.board.LockValue(r, c, val)
-	s.eliminateCandidates(r, c, val)
+func (s *Solver) LockValue(r, c int, val int8, pattern string) {
+	if s.board.LockValue(r, c, val) {
+		printFound(pattern, r, c, val)
+		s.eliminateCandidates(r, c, val)
+	}
 }
 
 // eliminateCandidates removes val as a candidate value for row r, column c, and
@@ -131,6 +132,14 @@ func (s *Solver) removeCellCandidate(r, c int, val int8) {
 	s.colGroups[c].RemoveCandidateCell(val, r)
 	house, houseCell, _, _ := getHouseInfo(r, c)
 	s.houseGroups[house].RemoveCandidateCell(val, houseCell)
+
+	// A "Naked Single" is a cell that has only one possible value.
+	// Checking for a "Naked Single" each time a candidate is removed narrows
+	// down the possible options more quickly, and doesn't require iterating
+	// over the entire board at the start of each solver pass.
+	if cell.NumCandidates() == 1 {
+		s.LockValue(r, c, cell.Candidates()[0], "Naked Single")
+	}
 }
 
 func getHouseInfo(row, col int) (houseIndex, cellIndex, baseRow, baseCol int) {

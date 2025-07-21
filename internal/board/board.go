@@ -47,17 +47,18 @@ func (b *Board) setFixedValue(r, c int, val int8) {
 	b.updateUnsolvedCounts(r, c, val)
 }
 
-func (b *Board) LockValue(r, c int, val int8) {
+func (b *Board) LockValue(r, c int, val int8) bool {
 	cell := b.Cells[r][c]
 	if cell.IsLocked() {
 		if cell.LockedValue() != val {
 			boardStateError(fmt.Sprintf("conflicting locked values at (%d,%d)", r, c))
 		}
-		return
+		return false
 	}
 
 	cell.LockValue(val)
 	b.updateUnsolvedCounts(r, c, val)
+	return true
 }
 
 func (b *Board) updateUnsolvedCounts(r, c int, val int8) {
