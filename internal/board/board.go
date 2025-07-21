@@ -18,7 +18,7 @@ func NewBoard() *Board {
 	b := &Board{}
 	for r := range 9 {
 		for c := range 9 {
-			b.Cells[r][c] = NewCell()
+			b.Cells[r][c] = NewCell(r, c)
 		}
 	}
 

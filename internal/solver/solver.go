@@ -8,6 +8,7 @@ import (
 type Solver struct {
 	board *board.Board
 
+	// Map values to possible locations for each group of 9 digits.
 	rowGroups   [9]*Group
 	colGroups   [9]*Group
 	houseGroups [9]*Group
@@ -17,9 +18,20 @@ func NewSolver(b *board.Board) *Solver {
 	s := &Solver{board: b}
 
 	for i := range 9 {
-		s.rowGroups[i] = NewGroup()
-		s.colGroups[i] = NewGroup()
-		s.houseGroups[i] = NewGroup()
+		s.rowGroups[i] = NewGroup("Row")
+		s.colGroups[i] = NewGroup("Column")
+		s.houseGroups[i] = NewGroup("House")
+	}
+
+	// Collect the cells that belong to each group.
+	for r := range 9 {
+		for c := range 9 {
+			cell := b.Cells[r][c]
+			s.rowGroups[r].Cells[c] = cell
+			s.colGroups[c].Cells[r] = cell
+			house, hr, hc := cell.HouseCoordinates()
+			s.houseGroups[house].Cells[hr*3+hc] = cell
+		}
 	}
 
 	s.initializeCandidates()
@@ -148,10 +160,4 @@ func getHouseInfo(row, col int) (houseIndex, cellIndex, baseRow, baseCol int) {
 	baseRow, baseCol = houseRow*3, houseCol*3
 	cellIndex = (row-baseRow)*3 + (col - baseCol)
 	return houseIndex, cellIndex, baseRow, baseCol
-}
-
-func getHouseCellLoc(houseIndex, cellIndex int) (row, col int) {
-	houseRow, houseCol := houseIndex/3, houseIndex%3
-	cellRow, cellCol := cellIndex/3, cellIndex%3
-	return houseRow*3 + cellRow, houseCol*3 + cellCol
 }

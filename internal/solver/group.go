@@ -1,25 +1,31 @@
 package solver
 
-import "github.com/kpitt/sudoku/internal/set"
+import (
+	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/set"
+)
 
 // A Group represents any row, column, or house that must contain each of the
 // digits from 1 to 9.  Each Group caches information about the remaining cells
 // that are possible locations for each digit, which makes it easier to check
 // for certain patterns.
 type Group struct {
-	unsolved map[int8]LocSet
+	unsolved  map[int8]LocSet
+	Cells     [9]*board.Cell
+	GroupType string
 }
 
 type LocSet = *set.Set[int]
 
 var emptyLocations = set.NewSet[int]()
 
-func NewGroup() *Group {
+func NewGroup(groupType string) *Group {
 	g := &Group{
-		unsolved: make(map[int8]LocSet),
+		unsolved:  make(map[int8]LocSet),
+		GroupType: groupType,
 	}
-	for v := int8(1); v <= 9; v = v + 1 {
-		g.unsolved[v] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
+	for i := range 9 {
+		g.unsolved[int8(i+1)] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
 	}
 	return g
 }

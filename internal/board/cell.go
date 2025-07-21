@@ -3,14 +3,16 @@ package board
 import "github.com/kpitt/sudoku/internal/set"
 
 type Cell struct {
-	IsFixed bool
+	Row, Col int
+	IsFixed  bool
 
 	value      int8
 	candidates *set.Set[int8]
 }
 
-func NewCell() *Cell {
+func NewCell(r, c int) *Cell {
 	return &Cell{
+		Row: r, Col: c,
 		candidates: set.NewSet[int8](1, 2, 3, 4, 5, 6, 7, 8, 9),
 	}
 }
@@ -42,6 +44,17 @@ func (c *Cell) IsCandidate(val int8) bool {
 
 func (c *Cell) RemoveCandidate(val int8) {
 	c.candidates.Remove(val)
+}
+
+// HouseCoordiinates returns the house coordinates of this cell.  The house
+// coordinates consist of the house number, and the row and column in the 3x3
+// grid of the house.
+func (c *Cell) HouseCoordinates() (house, row, col int) {
+	houseRow, houseCol := c.Row/3, c.Col/3
+	house = houseRow*3 + houseCol
+	baseRow, baseCol := houseRow*3, houseCol*3
+	row, col = c.Row-baseRow, c.Col-baseCol
+	return house, row, col
 }
 
 func (c *Cell) setFixedValue(val int8) {

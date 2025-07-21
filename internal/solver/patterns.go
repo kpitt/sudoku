@@ -8,33 +8,24 @@ import "fmt"
 func (s *Solver) findHiddenSingles() bool {
 	printChecking("Hidden Single")
 	found := false
-	lockValue := func(r, c int, val int8, groupType string) {
-		pattern := fmt.Sprintf("Hidden Single (%s)", groupType)
-		s.LockValue(r, c, val, pattern)
-		found = true
-	}
 	for i := range 9 {
-		row := s.rowGroups[i]
-		for val, locs := range row.Unsolved() {
-			if locs.Size() == 1 {
-				cols := locs.Values()
-				lockValue(i, cols[0], val, "Row")
-			}
-		}
-		col := s.colGroups[i]
-		for val, locs := range col.Unsolved() {
-			if locs.Size() == 1 {
-				rows := locs.Values()
-				lockValue(rows[0], i, val, "Column")
-			}
-		}
-		house := s.houseGroups[i]
-		for val, locs := range house.Unsolved() {
-			if locs.Size() == 1 {
-				cells := locs.Values()
-				r, c := getHouseCellLoc(i, cells[0])
-				lockValue(r, c, val, "House")
-			}
+		found = found ||
+			s.checkHiddenSinglesForGroup(s.rowGroups[i]) ||
+			s.checkHiddenSinglesForGroup(s.colGroups[i]) ||
+			s.checkHiddenSinglesForGroup(s.houseGroups[i])
+	}
+	return found
+}
+
+func (s *Solver) checkHiddenSinglesForGroup(g *Group) bool {
+	pattern := fmt.Sprintf("Hidden Single (%s)", g.GroupType)
+	found := false
+	for val, locs := range g.Unsolved() {
+		if locs.Size() == 1 {
+			index := locs.Values()[0]
+			cell := g.Cells[index]
+			s.LockValue(cell.Row, cell.Col, val, pattern)
+			found = true
 		}
 	}
 	return found
