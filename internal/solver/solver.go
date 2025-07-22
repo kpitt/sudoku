@@ -79,13 +79,16 @@ func (s *Solver) Solve() {
 		// we go back check the simplest patterns again.  Otherwise, we move on
 		// to the next pattern.
 
-		if s.findNakedOrHiddenPairs() {
+		if s.findNakedPairs() {
 			continue
 		}
 		if s.findLockedCandidates() {
 			continue
 		}
 		if s.findPointingTuples() {
+			continue
+		}
+		if s.findHiddenPairs() {
 			continue
 		}
 		if s.findNakedOrHiddenTriples() {

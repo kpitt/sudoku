@@ -52,3 +52,20 @@ func (s *Set[T]) Values() []T {
 	}
 	return values
 }
+
+// Union updates set s to be the union of s with set a.
+// Note that this function modifies s in place.  To return the union as a new
+// set, use the `set.Union` function instead.
+func (s *Set[T]) Union(a *Set[T]) {
+	for k := range a.elements {
+		s.Add(k)
+	}
+}
+
+// Union returns a new set containing the union of sets a and b.
+func Union[T comparable](a *Set[T], b *Set[T]) *Set[T] {
+	u := NewSet[T]()
+	u.Union(a)
+	u.Union(b)
+	return u
+}

@@ -15,7 +15,10 @@ type Group struct {
 	GroupType string
 }
 
-type LocSet = *set.Set[int]
+type (
+	LocSet         = *set.Set[int]
+	UnsolvedFilter = func(int8, LocSet) bool
+)
 
 var emptyLocations = set.NewSet[int]()
 
@@ -53,6 +56,16 @@ func (g *Group) RemoveCandidateValue(val int8, cell int) {
 
 func (g *Group) Unsolved() map[int8]LocSet {
 	return g.unsolved
+}
+
+func (g *Group) UnsolvedWhere(filter UnsolvedFilter) map[int8]LocSet {
+	filtered := make(map[int8]LocSet)
+	for v, l := range g.unsolved {
+		if filter(v, l) {
+			filtered[v] = l
+		}
+	}
+	return filtered
 }
 
 func (g *Group) NumUnsolved() int {

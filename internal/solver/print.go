@@ -18,3 +18,7 @@ func printChecking(pattern string) {
 func printFound(pattern string, r, c int, val int8) {
 	fmt.Fprintf(os.Stderr, "%s: (%d,%d) = %d\n", pattern, r, c, val)
 }
+
+func printEliminate(pattern string, r, c int, val int8) {
+	fmt.Fprintf(os.Stderr, "%s: eliminate %d at (%d,%d)\n", pattern, val, r, c)
+}
