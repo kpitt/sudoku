@@ -113,12 +113,42 @@ func (s *Solver) eliminateHiddenPairCandidates(c *board.Cell, x, y int8, pattern
 	}
 }
 
-func (s *Solver) findNakedOrHiddenTriples() bool {
+func (s *Solver) findNakedTriples() bool {
 	found := false
 	return found
 }
 
 func (s *Solver) findXWings() bool {
+	found := false
+	return found
+}
+
+func (s *Solver) findHiddenTriples() bool {
+	found := false
+	return found
+}
+
+func (s *Solver) findNakedQuadruples() bool {
+	found := false
+	return found
+}
+
+func (s *Solver) findYWings() bool {
+	found := false
+	return found
+}
+
+func (s *Solver) findAvoidableRectangles() bool {
+	found := false
+	return found
+}
+
+func (s *Solver) findXYZWings() bool {
+	found := false
+	return found
+}
+
+func (s *Solver) findHiddenQuadruples() bool {
 	found := false
 	return found
 }

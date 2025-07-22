@@ -91,10 +91,28 @@ func (s *Solver) Solve() {
 		if s.findHiddenPairs() {
 			continue
 		}
-		if s.findNakedOrHiddenTriples() {
+		if s.findNakedTriples() {
 			continue
 		}
 		if s.findXWings() {
+			continue
+		}
+		if s.findHiddenTriples() {
+			continue
+		}
+		if s.findNakedQuadruples() {
+			continue
+		}
+		if s.findYWings() {
+			continue
+		}
+		if s.findAvoidableRectangles() {
+			continue
+		}
+		if s.findXYZWings() {
+			continue
+		}
+		if s.findHiddenQuadruples() {
 			continue
 		}
 
