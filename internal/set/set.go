@@ -62,10 +62,11 @@ func (s *Set[T]) Union(a *Set[T]) {
 	}
 }
 
-// Union returns a new set containing the union of sets a and b.
-func Union[T comparable](a *Set[T], b *Set[T]) *Set[T] {
+// Union returns a new set containing the union of specified sets.
+func Union[T comparable](sets ...*Set[T]) *Set[T] {
 	u := NewSet[T]()
-	u.Union(a)
-	u.Union(b)
+	for _, s := range sets {
+		u.Union(s)
+	}
 	return u
 }

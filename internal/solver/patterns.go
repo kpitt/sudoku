@@ -69,6 +69,11 @@ func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
 	candidates := g.UnsolvedWhere(func(_ int8, l LocSet) bool {
 		return l.Size() == 2
 	})
+	if len(candidates) < 2 {
+		// We need at least 2 candidate values to have a pair.
+		return false
+	}
+
 	checked := set.NewSet[int8]()
 	// Check all values that have exactly 2 possible locations.
 	for valA, locsA := range candidates {
@@ -124,7 +129,65 @@ func (s *Solver) findXWings() bool {
 }
 
 func (s *Solver) findHiddenTriples() bool {
+	printChecking("Hidden Triple")
 	found := false
+	for i := range 9 {
+		found = found ||
+			s.checkHiddenTriplesForGroup(s.rowGroups[i]) ||
+			s.checkHiddenTriplesForGroup(s.colGroups[i]) ||
+			s.checkHiddenTriplesForGroup(s.houseGroups[i])
+	}
+	return found
+}
+
+func (s *Solver) checkHiddenTriplesForGroup(g *Group) bool {
+	found := false
+	candidates := g.UnsolvedWhere(func(_ int8, l LocSet) bool {
+		return l.Size() == 2 || l.Size() == 3
+	})
+	if len(candidates) < 3 {
+		// We need at least 3 candidate values to have a triple.
+		return false
+	}
+
+	values := make([]int8, 0, len(candidates))
+	for k := range candidates {
+		values = append(values, k)
+	}
+	for i := 0; i < len(values)-2; i++ {
+		for j := i + 1; j < len(values)-1; j++ {
+			for k := j + 1; k < len(values); k++ {
+				x, y, z := values[i], values[j], values[k]
+				locSet := set.Union(candidates[x], candidates[y], candidates[z])
+				if locSet.Size() != 3 {
+					// If the union of the location sets does not have exactly 3 elements, then
+					// this is not a hidden triple.
+					continue
+				}
+
+				valueSet := set.NewSet(x, y, z)
+				found = found || s.eliminateHiddenTripleCandidates(g, valueSet, locSet)
+			}
+		}
+	}
+	return found
+}
+
+func (s *Solver) eliminateHiddenTripleCandidates(
+	g *Group, values *set.Set[int8], locs *set.Set[int],
+) bool {
+	pattern := fmt.Sprintf("Hidden Triple (%s)", g.GroupType)
+	found := false
+	for _, l := range locs.Values() {
+		c := g.Cells[l]
+		for _, v := range c.Candidates() {
+			if !values.Contains(v) {
+				printEliminate(pattern, c.Row, c.Col, v)
+				s.removeCellCandidate(c.Row, c.Col, v)
+				found = true
+			}
+		}
+	}
 	return found
 }
 
