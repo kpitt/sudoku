@@ -63,6 +63,7 @@ func (s *Solver) Solve() {
 	for !b.IsSolved() {
 		pass = pass + 1
 		color.HiYellow("Solver Pass %d:", pass)
+		b.Print()
 
 		// "Naked Single" and "Hidden Single" are the only patterns that detect
 		// an exact solution for a given cell.  The "Naked Single" pattern is
@@ -116,6 +117,7 @@ func (s *Solver) LockValue(r, c int, val int8, pattern string) {
 func (s *Solver) eliminateCandidates(r, c int, val int8) {
 	// Remove value from the cached candidates for the row, column, and house
 	// of cell (r,c).
+	log("updateCandidates: removing %d at (%d,%d)", val, r, c)
 	s.rowGroups[r].RemoveCandidateValue(val, c)
 	s.colGroups[c].RemoveCandidateValue(val, r)
 	house, houseCell, rowBase, colBase := getHouseInfo(r, c)
@@ -127,6 +129,7 @@ func (s *Solver) eliminateCandidates(r, c int, val int8) {
 		// remove candidate from the house of (r,c)
 		s.removeCellCandidate(rowBase+i/3, colBase+i%3, val)
 	}
+	log("updateCandidates: done removing %d at (%d,%d)", val, r, c)
 }
 
 func (s *Solver) removeCellCandidate(r, c int, val int8) {

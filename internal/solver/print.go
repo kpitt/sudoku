@@ -18,3 +18,7 @@ func printChecking(pattern string) {
 func printFound(pattern string, r, c int, val int8) {
 	fmt.Fprintf(os.Stderr, "%s: (%d,%d) = %d\n", pattern, r, c, val)
 }
+
+func log(format string, a ...any) {
+	color.HiBlack(format, a...)
+}

@@ -45,6 +45,7 @@ func (b *Board) IsDigitSolved(digit int8) bool {
 func (b *Board) setFixedValue(r, c int, val int8) {
 	b.Cells[r][c].setFixedValue(val)
 	b.updateUnsolvedCounts(r, c, val)
+	log("Initial Value: (%d,%d) = %d", r, c, val)
 }
 
 func (b *Board) LockValue(r, c int, val int8) bool {
@@ -57,6 +58,7 @@ func (b *Board) LockValue(r, c int, val int8) bool {
 	}
 
 	cell.LockValue(val)
+	log("LockValue: (%d,%d) = %d", r, c, cell.LockedValue())
 	b.updateUnsolvedCounts(r, c, val)
 	return true
 }
@@ -64,6 +66,8 @@ func (b *Board) LockValue(r, c int, val int8) bool {
 func (b *Board) updateUnsolvedCounts(r, c int, val int8) {
 	b.unsolvedCounts[0] = b.unsolvedCounts[0] - 1
 	b.unsolvedCounts[val] = b.unsolvedCounts[val] - 1
+	log("locked cell (%d,%d) to val %d: %d digits remaining, %d cells unsolved",
+		r, c, val, b.unsolvedCounts[val], b.unsolvedCounts[0])
 	if b.unsolvedCounts[val] < 0 {
 		boardStateError(fmt.Sprintf("too many instances of digit %d when locking cell (%d,%d)", val, r, c))
 	}

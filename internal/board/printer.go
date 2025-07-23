@@ -88,3 +88,7 @@ func (c *Cell) printCandidates(candidateRow int) {
 		}
 	}
 }
+
+func log(format string, a ...any) {
+	color.HiBlack(format, a...)
+}
