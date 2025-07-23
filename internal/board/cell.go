@@ -7,13 +7,13 @@ type Cell struct {
 	IsFixed  bool
 
 	value      int8
-	candidates *set.Set[int8]
+	Candidates *set.Set[int8]
 }
 
 func NewCell(r, c int) *Cell {
 	return &Cell{
 		Row: r, Col: c,
-		candidates: set.NewSet[int8](1, 2, 3, 4, 5, 6, 7, 8, 9),
+		Candidates: set.NewSet[int8](1, 2, 3, 4, 5, 6, 7, 8, 9),
 	}
 }
 
@@ -27,23 +27,23 @@ func (c *Cell) LockedValue() int8 {
 
 func (c *Cell) LockValue(val int8) {
 	c.value = val
-	c.candidates.Clear()
+	c.Candidates.Clear()
 }
 
 func (c *Cell) NumCandidates() int {
-	return c.candidates.Size()
+	return c.Candidates.Size()
 }
 
-func (c *Cell) Candidates() []int8 {
-	return c.candidates.Values()
+func (c *Cell) CandidateValues() []int8 {
+	return c.Candidates.Values()
 }
 
-func (c *Cell) IsCandidate(val int8) bool {
-	return c.candidates.Contains(val)
+func (c *Cell) HasCandidate(val int8) bool {
+	return c.Candidates.Contains(val)
 }
 
 func (c *Cell) RemoveCandidate(val int8) {
-	c.candidates.Remove(val)
+	c.Candidates.Remove(val)
 }
 
 // HouseCoordiinates returns the house coordinates of this cell.  The house

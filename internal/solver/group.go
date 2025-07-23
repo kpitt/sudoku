@@ -10,7 +10,7 @@ import (
 // that are possible locations for each digit, which makes it easier to check
 // for certain patterns.
 type Group struct {
-	unsolved  map[int8]LocSet
+	Unsolved  map[int8]LocSet
 	Cells     [9]*board.Cell
 	GroupType string
 }
@@ -24,21 +24,21 @@ var emptyLocations = set.NewSet[int]()
 
 func NewGroup(groupType string) *Group {
 	g := &Group{
-		unsolved:  make(map[int8]LocSet),
+		Unsolved:  make(map[int8]LocSet),
 		GroupType: groupType,
 	}
 	for i := range 9 {
-		g.unsolved[int8(i+1)] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
+		g.Unsolved[int8(i+1)] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
 	}
 	return g
 }
 
 // RemoveCandidateCell removes cell from the candidate locations for value val.
 func (g *Group) RemoveCandidateCell(val int8, cell int) {
-	if cells := g.unsolved[val]; cells != nil {
+	if cells := g.Unsolved[val]; cells != nil {
 		cells.Remove(cell)
 		if cells.Size() == 0 {
-			delete(g.unsolved, val)
+			delete(g.Unsolved, val)
 		}
 	}
 }
@@ -47,48 +47,34 @@ func (g *Group) RemoveCandidateCell(val int8, cell int) {
 // locked value of val in cell.
 func (g *Group) RemoveCandidateValue(val int8, cell int) {
 	// val is no longer an unsolved candidate for any cell in this group.
-	delete(g.unsolved, val)
+	delete(g.Unsolved, val)
 	// If cell is locked, then no other value can appear in that location.
-	for _, locs := range g.unsolved {
+	for _, locs := range g.Unsolved {
 		locs.Remove(cell)
 	}
 }
 
-func (g *Group) Unsolved() map[int8]LocSet {
-	return g.unsolved
-}
-
-func (g *Group) UnsolvedWhere(filter UnsolvedFilter) map[int8]LocSet {
-	filtered := make(map[int8]LocSet)
-	for v, l := range g.unsolved {
-		if filter(v, l) {
-			filtered[v] = l
-		}
-	}
-	return filtered
-}
-
 func (g *Group) NumUnsolved() int {
-	return len(g.unsolved)
+	return len(g.Unsolved)
 }
 
 func (g *Group) UnsolvedDigits() []int8 {
-	digits := make([]int8, 0, len(g.unsolved))
-	for k := range g.unsolved {
+	digits := make([]int8, 0, len(g.Unsolved))
+	for k := range g.Unsolved {
 		digits = append(digits, k)
 	}
 	return digits
 }
 
 func (g *Group) NumLocations(val int8) int {
-	if loc, ok := g.unsolved[val]; ok {
+	if loc, ok := g.Unsolved[val]; ok {
 		return loc.Size()
 	}
 	return 0
 }
 
 func (g *Group) Locations(val int8) LocSet {
-	if loc, ok := g.unsolved[val]; ok {
+	if loc, ok := g.Unsolved[val]; ok {
 		return loc
 	}
 	return emptyLocations

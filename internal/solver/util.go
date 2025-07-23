@@ -7,3 +7,15 @@ func mapKeys[K comparable, V any](m map[K]V) []K {
 	}
 	return keys
 }
+
+func filterMap[K comparable, V any](
+	m map[K]V, filter func(K, V) bool,
+) map[K]V {
+	filtered := make(map[K]V)
+	for k, v := range m {
+		if filter(k, v) {
+			filtered[k] = v
+		}
+	}
+	return filtered
+}

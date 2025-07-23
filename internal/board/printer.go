@@ -81,7 +81,7 @@ func (c *Cell) printCandidates(candidateRow int) {
 	candidateBase := candidateRow*3 + 1
 	for col := range 3 {
 		candidate := int8(candidateBase + col)
-		if c.IsCandidate(candidate) {
+		if c.HasCandidate(candidate) {
 			fmt.Print(color.HiBlackString("%d", candidate))
 		} else {
 			fmt.Print(" ")

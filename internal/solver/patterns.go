@@ -24,7 +24,7 @@ func (s *Solver) findHiddenSingles() bool {
 func (s *Solver) checkHiddenSinglesForGroup(g *Group) bool {
 	pattern := fmt.Sprintf("Hidden Single (%s)", g.GroupType)
 	found := false
-	for val, locs := range g.Unsolved() {
+	for val, locs := range g.Unsolved {
 		if locs.Size() == 1 {
 			index := locs.Values()[0]
 			cell := g.Cells[index]
@@ -36,7 +36,71 @@ func (s *Solver) checkHiddenSinglesForGroup(g *Group) bool {
 }
 
 func (s *Solver) findNakedPairs() bool {
+	printChecking("Naked Pair")
 	found := false
+	for i := range 9 {
+		found = found ||
+			s.checkNakedPairsForGroup(s.rowGroups[i]) ||
+			s.checkNakedPairsForGroup(s.colGroups[i]) ||
+			s.checkNakedPairsForGroup(s.houseGroups[i])
+	}
+	return found
+}
+
+func (s *Solver) checkNakedPairsForGroup(g *Group) bool {
+	found := false
+	candidates := make(map[int]*set.Set[int8])
+	for i, c := range g.Cells {
+		// Collect a map of all locations with exactly 2 candidate values.
+		if c.NumCandidates() == 2 {
+			candidates[i] = c.Candidates
+		}
+	}
+	if len(candidates) < 2 {
+		// We need at least 2 candidate values to have a pair.
+		return false
+	}
+
+	locs := mapKeys(candidates)
+	for i := 0; i < len(locs)-1; i++ {
+		for j := i + 1; j < len(locs); j++ {
+			a, b := locs[i], locs[j]
+			valueSet := set.Union(candidates[a], candidates[b])
+			if valueSet.Size() != 2 {
+				// If the union of the location sets does not have exactly 2 elements, then
+				// this is not a naked pair.
+				continue
+			}
+
+			locSet := set.NewSet(a, b)
+			found = found || s.eliminateNakedTupleCandidates(
+				g, valueSet, locSet, "Naked Pair")
+		}
+	}
+
+	return found
+}
+
+// eliminateNakedTupleCandidates removes candidates that are listed in values
+// from all cells that are not listed in locs.
+func (s *Solver) eliminateNakedTupleCandidates(
+	g *Group, values *set.Set[int8], locs LocSet, basePattern string,
+) bool {
+	pattern := fmt.Sprintf("%s (%s)", basePattern, g.GroupType)
+	found := false
+	for l := range 9 {
+		if locs.Contains(l) {
+			continue
+		}
+		c := g.Cells[l]
+		for _, v := range values.Values() {
+			if c.HasCandidate(v) {
+				printEliminate(pattern, c.Row, c.Col, v)
+				s.removeCellCandidate(c.Row, c.Col, v)
+				found = true
+			}
+		}
+	}
 	return found
 }
 
@@ -64,7 +128,7 @@ func (s *Solver) findHiddenPairs() bool {
 
 func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
 	found := false
-	candidates := g.UnsolvedWhere(func(_ int8, l LocSet) bool {
+	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
 		return l.Size() == 2
 	})
 	if len(candidates) < 2 {
@@ -92,14 +156,16 @@ func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
 	return found
 }
 
+// eliminateHiddenTupleCandidates removes all candidates that are not listed
+// in values from the cells in locs.
 func (s *Solver) eliminateHiddenTupleCandidates(
-	g *Group, values *set.Set[int8], locs *set.Set[int], basePattern string,
+	g *Group, values *set.Set[int8], locs LocSet, basePattern string,
 ) bool {
 	pattern := fmt.Sprintf("%s (%s)", basePattern, g.GroupType)
 	found := false
 	for _, l := range locs.Values() {
 		c := g.Cells[l]
-		for _, v := range c.Candidates() {
+		for _, v := range c.CandidateValues() {
 			if !values.Contains(v) {
 				printEliminate(pattern, c.Row, c.Col, v)
 				s.removeCellCandidate(c.Row, c.Col, v)
@@ -134,7 +200,7 @@ func (s *Solver) findHiddenTriples() bool {
 
 func (s *Solver) checkHiddenTriplesForGroup(g *Group) bool {
 	found := false
-	candidates := g.UnsolvedWhere(func(_ int8, l LocSet) bool {
+	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3
 	})
 	if len(candidates) < 3 {
@@ -198,7 +264,7 @@ func (s *Solver) findHiddenQuadruples() bool {
 
 func (s *Solver) checkHiddenQuadruplesForGroup(g *Group) bool {
 	found := false
-	candidates := g.UnsolvedWhere(func(_ int8, l LocSet) bool {
+	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3 || l.Size() == 4
 	})
 	if len(candidates) < 4 {

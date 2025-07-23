@@ -153,7 +153,7 @@ func (s *Solver) eliminateCandidates(r, c int, val int8) {
 func (s *Solver) removeCellCandidate(r, c int, val int8) {
 	b := s.board
 	cell := b.Cells[r][c]
-	if cell.IsLocked() || !cell.IsCandidate(val) {
+	if cell.IsLocked() || !cell.HasCandidate(val) {
 		return
 	}
 
@@ -171,7 +171,7 @@ func (s *Solver) removeCellCandidate(r, c int, val int8) {
 	// down the possible options more quickly, and doesn't require iterating
 	// over the entire board at the start of each solver pass.
 	if cell.NumCandidates() == 1 {
-		s.LockValue(r, c, cell.Candidates()[0], "Naked Single")
+		s.LockValue(r, c, cell.CandidateValues()[0], "Naked Single")
 	}
 }
 
