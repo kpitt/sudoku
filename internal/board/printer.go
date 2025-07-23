@@ -45,6 +45,9 @@ func (b *Board) PrintUnsolvedCounts() {
 			fmt.Printf("%d: complete\n", digit)
 		}
 	}
+	fmt.Printf("\n%s %d\n",
+		color.HiWhiteString("Total Unsolved Cells:"),
+		b.unsolvedCounts[0])
 }
 
 func printRow(row [9]*Cell) {
