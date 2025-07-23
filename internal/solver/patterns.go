@@ -106,7 +106,38 @@ func (s *Solver) eliminateFromOtherLocs(
 }
 
 func (s *Solver) findLockedCandidates() bool {
+	printChecking("Locked Candidate")
 	found := false
+	for i := range 9 {
+		// We only need to check rows and columns for Locked Candidates.
+		found = found ||
+			s.checkLockedCandidatesForRowCol(s.rowGroups[i]) ||
+			s.checkLockedCandidatesForRowCol(s.colGroups[i])
+	}
+	return found
+}
+
+func (s *Solver) checkLockedCandidatesForRowCol(g *Group) bool {
+	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
+		// If we have more than 3 candidates in a row or column, then they can't all
+		// be in the same house.
+		return l.Size() <= 3
+	})
+
+	found := false
+	for val, locs := range candidates {
+		valueSet := set.NewSet(val)
+		cells := g.cellsFromLocs(locs.Values())
+		if house, ok := g.sharedHouse(locs); ok {
+			houseCells := transformSlice(cells, func(c *board.Cell) int {
+				_, hr, hc := c.HouseCoordinates()
+				return hr*3 + hc
+			})
+			locSet := set.NewSet(houseCells...)
+			found = found || s.eliminateFromOtherLocs(
+				s.houseGroups[house], valueSet, locSet, "Locked Candidate")
+		}
+	}
 	return found
 }
 
@@ -114,6 +145,7 @@ func (s *Solver) findPointingTuples() bool {
 	printChecking("Pointing Tuple")
 	found := false
 	for i := range 9 {
+		// We only need to check houses for Pointing Tuples.
 		found = found || s.checkPointingTuplesForHouse(s.houseGroups[i])
 	}
 	return found
@@ -121,7 +153,9 @@ func (s *Solver) findPointingTuples() bool {
 
 func (s *Solver) checkPointingTuplesForHouse(g *Group) bool {
 	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
-		return l.Size() == 2 || l.Size() == 3
+		// If we have more than 3 candidates in a house, then they can't all be in the
+		// same row or column.
+		return l.Size() <= 3
 	})
 
 	found := false

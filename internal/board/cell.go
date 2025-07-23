@@ -46,6 +46,13 @@ func (c *Cell) RemoveCandidate(val int8) {
 	c.Candidates.Remove(val)
 }
 
+// House returns the index of the house that contains this cell.  Houses are
+// numbered from left-to-right, top-to-bottom across the 3x3 grid of houses,
+// with house 0 at the top-left and house 8 at the bottom-right.
+func (c *Cell) House() int {
+	return (c.Row - c.Row%3) + c.Col/3
+}
+
 // HouseCoordiinates returns the house coordinates of this cell.  The house
 // coordinates consist of the house number, and the row and column in the 3x3
 // grid of the house.
