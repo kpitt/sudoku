@@ -1,6 +1,8 @@
 package solver
 
 import (
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/kpitt/sudoku/internal/board"
 )
@@ -57,6 +59,8 @@ func (s *Solver) initializeCandidates() {
 // is completely solved, or until no more candidates can be eliminated (partial
 // solution).
 func (s *Solver) Solve() {
+	defer solveTimer(time.Now())
+
 	b := s.board
 
 	var pass int
@@ -124,6 +128,10 @@ func (s *Solver) Solve() {
 	color.HiYellow("Total Solver Passes: %d", pass)
 }
 
+func solveTimer(start time.Time) {
+	elapsed := time.Since(start)
+	color.HiYellow("Total Solver Time:   %v", elapsed)
+}
 func (s *Solver) LockValue(r, c int, val int8, pattern string) {
 	if s.board.LockValue(r, c, val) {
 		printFound(pattern, r, c, val)
