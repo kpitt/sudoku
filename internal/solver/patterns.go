@@ -244,7 +244,50 @@ func (s *Solver) eliminateOtherValues(
 }
 
 func (s *Solver) findNakedTriples() bool {
+	printChecking("Naked Triple")
 	found := false
+	for i := range 9 {
+		found = found ||
+			s.checkNakedTriplesForGroup(s.rowGroups[i]) ||
+			s.checkNakedTriplesForGroup(s.colGroups[i]) ||
+			s.checkNakedTriplesForGroup(s.houseGroups[i])
+	}
+	return found
+}
+
+func (s *Solver) checkNakedTriplesForGroup(g *Group) bool {
+	found := false
+	candidates := make(map[int]*set.Set[int8])
+	for i, c := range g.Cells {
+		// Collect a map of all locations with either 2 or 3 candidate values.
+		if c.NumCandidates() == 2 || c.NumCandidates() == 3 {
+			candidates[i] = c.Candidates
+		}
+	}
+	if len(candidates) < 3 {
+		// We need at least 3 candidate values to have a triple.
+		return false
+	}
+
+	locs := mapKeys(candidates)
+	for i := 0; i < len(locs)-2; i++ {
+		for j := i + 1; j < len(locs)-1; j++ {
+			for k := j + 1; k < len(locs); k++ {
+				a, b, c := locs[i], locs[j], locs[k]
+				valueSet := set.Union(candidates[a], candidates[b], candidates[c])
+				if valueSet.Size() != 3 {
+					// If the union of the location sets does not have exactly 3 elements, then
+					// this is not a naked triple.
+					continue
+				}
+
+				locSet := set.NewSet(a, b, c)
+				found = found || s.eliminateFromOtherLocs(
+					g, valueSet, locSet, "Naked Triple")
+			}
+		}
+	}
+
 	return found
 }
 
