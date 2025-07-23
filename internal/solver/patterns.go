@@ -185,6 +185,52 @@ func (s *Solver) findXYZWings() bool {
 }
 
 func (s *Solver) findHiddenQuadruples() bool {
+	printChecking("Hidden Quadruple")
 	found := false
+	for i := range 9 {
+		found = found ||
+			s.checkHiddenQuadruplesForGroup(s.rowGroups[i]) ||
+			s.checkHiddenQuadruplesForGroup(s.colGroups[i]) ||
+			s.checkHiddenQuadruplesForGroup(s.houseGroups[i])
+	}
+	return found
+}
+
+func (s *Solver) checkHiddenQuadruplesForGroup(g *Group) bool {
+	found := false
+	candidates := g.UnsolvedWhere(func(_ int8, l LocSet) bool {
+		return l.Size() == 2 || l.Size() == 3 || l.Size() == 4
+	})
+	if len(candidates) < 4 {
+		// We need at least 4 candidate values to have a quadruple.
+		return false
+	}
+
+	values := mapKeys(candidates)
+	for i := 0; i < len(values)-3; i++ {
+		for j := i + 1; j < len(values)-2; j++ {
+			for k := j + 1; k < len(values)-1; k++ {
+				for n := k + 1; n < len(values); n++ {
+					w, x, y, z := values[i], values[j], values[k], values[n]
+					locSet := set.Union(
+						candidates[w],
+						candidates[x],
+						candidates[y],
+						candidates[z],
+					)
+					if locSet.Size() != 4 {
+						// If the union of the location sets does not have exactly 4 elements, then
+						// this is not a hidden quadruple.
+						continue
+					}
+
+					valueSet := set.NewSet(w, x, y, z)
+					found = found || s.eliminateHiddenTupleCandidates(
+						g, valueSet, locSet, "Hidden Quadruple")
+				}
+			}
+		}
+	}
+
 	return found
 }
