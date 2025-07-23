@@ -346,7 +346,112 @@ func (s *Solver) findNakedQuadruples() bool {
 }
 
 func (s *Solver) findYWings() bool {
+	printChecking("Y Wing")
+	// Collect a list of all cells with exactly 2 candidates.  Note that we'll
+	// still need to re-check each cell later because additional candidates may
+	// get removed along the way.
+	b := s.board
+	var candidates []*board.Cell
+	for r := range 9 {
+		for c := range 9 {
+			if b.Cells[r][c].NumCandidates() == 2 {
+				candidates = append(candidates, b.Cells[r][c])
+			}
+		}
+	}
+	if len(candidates) < 3 {
+		// A Y Wing requires a base cell and 2 wing cells, so we need at least
+		// 3 candidates.
+		return false
+	}
+
 	found := false
+	// Try each candidate as the base cell, checking it against all of the other
+	// candidates.
+	for _, base := range candidates {
+		if base.NumCandidates() == 2 {
+			found = s.checkYWingsForCell(base, candidates) || found
+		}
+	}
+	return found
+}
+
+func (s *Solver) checkYWingsForCell(
+	base *board.Cell, candidates []*board.Cell,
+) bool {
+	// Get the base x and y values.
+	values := base.CandidateValues()
+	x, y := values[0], values[1]
+
+	// Find the candidate cells that can be seen by the base cell and have either
+	// x or y as a candidate, but not both.  Collect the cells into separate lists
+	// for cells that have x but not y and cells that have y but not x.
+	var xCells, yCells []*board.Cell
+	for _, cell := range candidates {
+		if cell.SameCell(base) || cell.NumCandidates() != 2 || !seesCell(cell, base) {
+			continue
+		}
+		if cell.HasCandidate(x) && !cell.HasCandidate(y) {
+			xCells = append(xCells, cell)
+		} else if !cell.HasCandidate(x) && cell.HasCandidate(y) {
+			yCells = append(yCells, cell)
+		}
+	}
+	if len(xCells) == 0 || len(yCells) == 0 {
+		// We need at least one candidate cell for each value to have a Y Wing.
+		return false
+	}
+
+	found := false
+	// Check each of the x-cells against each of the y-cells to see if they share
+	// a common 3rd value z.
+	for _, xc := range xCells {
+		if xc.NumCandidates() != 2 {
+			continue
+		}
+		cellVals := xc.CandidateValues()
+		// Set z to the non-x value in the candidate cell.
+		z := cellVals[0]
+		if z == x {
+			z = cellVals[1]
+		}
+		// Look for a y-cell that also contains z and is not visible from the x-cell.
+		for _, yc := range yCells {
+			if !yc.HasCandidate(z) || seesCell(xc, yc) {
+				continue
+			}
+			found = s.eliminateYWingCells(z, xc, yc) || found
+		}
+	}
+	return found
+}
+
+// eliminateYWingCells removes candidate value z from all cells that see both
+// xCell and yCell.  This assumes that xCell and yCell cannot see each other.
+func (s *Solver) eliminateYWingCells(z int8, xCell, yCell *board.Cell) bool {
+	seesYCell := func(cell *board.Cell) bool {
+		return seesCell(cell, yCell)
+	}
+	removeZs := func(g *Group) bool {
+		// Find candidate locations for value z in group g, which is assumed to be a
+		// group that contains xCell.
+		if locs, ok := g.Unsolved[z]; ok {
+			// Select only the cells that also see yCell.
+			cells := g.cellsFromLocs(locs.Values())
+			cells = filterSlice(cells, seesYCell)
+			for _, zCell := range cells {
+				printEliminate("Y Wing", zCell.Row, zCell.Col, z)
+				s.removeCellCandidate(zCell.Row, zCell.Col, z)
+			}
+			// Return true if we found any candidates to remove.
+			return len(cells) != 0
+		}
+		return false
+	}
+
+	found := removeZs(s.rowGroups[xCell.Row])
+	found = removeZs(s.colGroups[xCell.Col]) || found
+	found = removeZs(s.houseGroups[xCell.House()]) || found
 	return found
 }
 

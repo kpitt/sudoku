@@ -64,6 +64,12 @@ func (c *Cell) HouseCoordinates() (house, row, col int) {
 	return house, row, col
 }
 
+// SameCell returns true if the other Cell refers to the same cell location
+// as this Cell (i.e. both cells have the same row and column).
+func (c *Cell) SameCell(other *Cell) bool {
+	return c.Row == other.Row && c.Col == other.Col
+}
+
 func (c *Cell) setFixedValue(val int8) {
 	c.IsFixed = true
 	c.LockValue(val)

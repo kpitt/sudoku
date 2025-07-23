@@ -1,5 +1,7 @@
 package solver
 
+import "github.com/kpitt/sudoku/internal/board"
+
 func mapKeys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {
@@ -20,6 +22,16 @@ func filterMap[K comparable, V any](
 	return filtered
 }
 
+func filterSlice[T any](s []T, filter func(T) bool) []T {
+	var filtered []T
+	for _, v := range s {
+		if filter(v) {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
+}
+
 func transformSlice[TSource, TTarget any](
 	source []TSource, transform func(TSource) TTarget,
 ) []TTarget {
@@ -28,4 +40,13 @@ func transformSlice[TSource, TTarget any](
 		target = append(target, transform(s))
 	}
 	return target
+}
+
+// seesCell returns true if cell a sees cell b (i.e. they share a row, column,
+// or house).
+func seesCell(a, b *board.Cell) bool {
+	// Two cells can see each other if they have the same row, the same column,
+	// or the same house and they are not the same cell.
+	return !a.SameCell(b) &&
+		(a.Row == b.Row || a.Col == b.Col || a.House() == b.House())
 }
