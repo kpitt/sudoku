@@ -3,6 +3,7 @@ package solver
 import (
 	"fmt"
 
+	"github.com/kpitt/sudoku/internal/board"
 	"github.com/kpitt/sudoku/internal/set"
 )
 
@@ -73,7 +74,7 @@ func (s *Solver) checkNakedPairsForGroup(g *Group) bool {
 			}
 
 			locSet := set.NewSet(a, b)
-			found = found || s.eliminateNakedTupleCandidates(
+			found = found || s.eliminateFromOtherLocs(
 				g, valueSet, locSet, "Naked Pair")
 		}
 	}
@@ -81,9 +82,9 @@ func (s *Solver) checkNakedPairsForGroup(g *Group) bool {
 	return found
 }
 
-// eliminateNakedTupleCandidates removes candidates that are listed in values
-// from all cells that are not listed in locs.
-func (s *Solver) eliminateNakedTupleCandidates(
+// eliminateFromOtherLocs removes the candidates listed in values from all
+// cells that are not listed in locs.
+func (s *Solver) eliminateFromOtherLocs(
 	g *Group, values *set.Set[int8], locs LocSet, basePattern string,
 ) bool {
 	pattern := fmt.Sprintf("%s (%s)", basePattern, g.GroupType)
@@ -110,7 +111,40 @@ func (s *Solver) findLockedCandidates() bool {
 }
 
 func (s *Solver) findPointingTuples() bool {
+	printChecking("Pointing Tuple")
 	found := false
+	for i := range 9 {
+		found = found || s.checkPointingTuplesForHouse(s.houseGroups[i])
+	}
+	return found
+}
+
+func (s *Solver) checkPointingTuplesForHouse(g *Group) bool {
+	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
+		return l.Size() == 2 || l.Size() == 3
+	})
+
+	found := false
+	for val, locs := range candidates {
+		valueSet := set.NewSet(val)
+		cells := g.cellsFromLocs(locs.Values())
+		if row, ok := g.sharedRow(locs); ok {
+			cols := transformSlice(cells, func(c *board.Cell) int {
+				return c.Col
+			})
+			locSet := set.NewSet(cols...)
+			found = found || s.eliminateFromOtherLocs(
+				s.rowGroups[row], valueSet, locSet, "Pointing Tuple")
+		}
+		if col, ok := g.sharedCol(locs); ok {
+			rows := transformSlice(cells, func(c *board.Cell) int {
+				return c.Row
+			})
+			locSet := set.NewSet(rows...)
+			found = found || s.eliminateFromOtherLocs(
+				s.colGroups[col], valueSet, locSet, "Pointing Tuple")
+		}
+	}
 	return found
 }
 
@@ -127,7 +161,6 @@ func (s *Solver) findHiddenPairs() bool {
 }
 
 func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
-	found := false
 	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
 		return l.Size() == 2
 	})
@@ -136,6 +169,7 @@ func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
 		return false
 	}
 
+	found := false
 	values := mapKeys(candidates)
 	for i := 0; i < len(values)-1; i++ {
 		for j := i + 1; j < len(values); j++ {
@@ -148,17 +182,16 @@ func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
 			}
 
 			valueSet := set.NewSet(x, y)
-			found = found || s.eliminateHiddenTupleCandidates(
+			found = found || s.eliminateOtherValues(
 				g, valueSet, locSet, "Hidden Pair")
 		}
 	}
-
 	return found
 }
 
-// eliminateHiddenTupleCandidates removes all candidates that are not listed
-// in values from the cells in locs.
-func (s *Solver) eliminateHiddenTupleCandidates(
+// eliminateOtherValues removes candidates that are not listed in values
+// from the cells in locs.
+func (s *Solver) eliminateOtherValues(
 	g *Group, values *set.Set[int8], locs LocSet, basePattern string,
 ) bool {
 	pattern := fmt.Sprintf("%s (%s)", basePattern, g.GroupType)
@@ -199,7 +232,6 @@ func (s *Solver) findHiddenTriples() bool {
 }
 
 func (s *Solver) checkHiddenTriplesForGroup(g *Group) bool {
-	found := false
 	candidates := filterMap(g.Unsolved, func(_ int8, l LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3
 	})
@@ -208,6 +240,7 @@ func (s *Solver) checkHiddenTriplesForGroup(g *Group) bool {
 		return false
 	}
 
+	found := false
 	values := mapKeys(candidates)
 	for i := 0; i < len(values)-2; i++ {
 		for j := i + 1; j < len(values)-1; j++ {
@@ -221,12 +254,11 @@ func (s *Solver) checkHiddenTriplesForGroup(g *Group) bool {
 				}
 
 				valueSet := set.NewSet(x, y, z)
-				found = found || s.eliminateHiddenTupleCandidates(
+				found = found || s.eliminateOtherValues(
 					g, valueSet, locSet, "Hidden Triple")
 			}
 		}
 	}
-
 	return found
 }
 
@@ -291,7 +323,7 @@ func (s *Solver) checkHiddenQuadruplesForGroup(g *Group) bool {
 					}
 
 					valueSet := set.NewSet(w, x, y, z)
-					found = found || s.eliminateHiddenTupleCandidates(
+					found = found || s.eliminateOtherValues(
 						g, valueSet, locSet, "Hidden Quadruple")
 				}
 			}

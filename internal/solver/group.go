@@ -79,3 +79,35 @@ func (g *Group) Locations(val int8) LocSet {
 	}
 	return emptyLocations
 }
+
+// sharedRow returns the row and true if all cells for the locations in locs
+// are in the same row.  Otherwise, returns 0 and false.
+func (g *Group) sharedRow(locs LocSet) (row int, ok bool) {
+	cells := g.cellsFromLocs(locs.Values())
+	c0 := cells[0]
+	for _, c := range cells[1:] {
+		if c.Row != c0.Row {
+			return 0, false
+		}
+	}
+	return c0.Row, true
+}
+
+// sharedCol returns the column and true if all cells for the locations in locs
+// are in the same row.  Otherwise, returns 0 and false.
+func (g *Group) sharedCol(locs LocSet) (col int, ok bool) {
+	cells := g.cellsFromLocs(locs.Values())
+	c0 := cells[0]
+	for _, c := range cells[1:] {
+		if c.Col != c0.Col {
+			return 0, false
+		}
+	}
+	return c0.Col, true
+}
+
+func (g *Group) cellsFromLocs(locs []int) []*board.Cell {
+	return transformSlice(locs, func(l int) *board.Cell {
+		return g.Cells[l]
+	})
+}

@@ -19,3 +19,13 @@ func filterMap[K comparable, V any](
 	}
 	return filtered
 }
+
+func transformSlice[TSource, TTarget any](
+	source []TSource, transform func(TSource) TTarget,
+) []TTarget {
+	target := make([]TTarget, 0, len(source))
+	for _, s := range source {
+		target = append(target, transform(s))
+	}
+	return target
+}
