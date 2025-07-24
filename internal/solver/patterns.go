@@ -7,6 +7,15 @@ import (
 	"github.com/kpitt/sudoku/internal/set"
 )
 
+// ***** IMPORTANT NOTE *****
+// If you are combining multiple boolean checks and you want them all to run
+// regardless of whether other checks succeed or fail, then each check **MUST**
+// come before the first `||` operator in the combining expression.  This
+// implies that a separate combining statement is needed for each check, and
+// the accumulator variable must come **AFTER** the check expression.  The OR
+// operator (`||`) will short-circuit after the first `true` expression, so any
+// check that follows an OR operator might not run.
+
 // findHiddenSingles locks the value of any cells that match the "Hidden Single"
 // pattern.  A "Hidden Single" is the only cell that contains a particular
 // candidate in its row, column, or house.
@@ -14,10 +23,9 @@ func (s *Solver) findHiddenSingles() bool {
 	printChecking("Hidden Single")
 	found := false
 	for i := range 9 {
-		found = found ||
-			s.checkHiddenSinglesForGroup(s.rowGroups[i]) ||
-			s.checkHiddenSinglesForGroup(s.colGroups[i]) ||
-			s.checkHiddenSinglesForGroup(s.houseGroups[i])
+		found = s.checkHiddenSinglesForGroup(s.rowGroups[i]) || found
+		found = s.checkHiddenSinglesForGroup(s.colGroups[i]) || found
+		found = s.checkHiddenSinglesForGroup(s.houseGroups[i]) || found
 	}
 	return found
 }
@@ -40,10 +48,9 @@ func (s *Solver) findNakedPairs() bool {
 	printChecking("Naked Pair")
 	found := false
 	for i := range 9 {
-		found = found ||
-			s.checkNakedPairsForGroup(s.rowGroups[i]) ||
-			s.checkNakedPairsForGroup(s.colGroups[i]) ||
-			s.checkNakedPairsForGroup(s.houseGroups[i])
+		found = s.checkNakedPairsForGroup(s.rowGroups[i]) || found
+		found = s.checkNakedPairsForGroup(s.colGroups[i]) || found
+		found = s.checkNakedPairsForGroup(s.houseGroups[i]) || found
 	}
 	return found
 }
@@ -74,8 +81,7 @@ func (s *Solver) checkNakedPairsForGroup(g *Group) bool {
 			}
 
 			locSet := set.NewSet(a, b)
-			found = found || s.eliminateFromOtherLocs(
-				g, valueSet, locSet, "Naked Pair")
+			found = s.eliminateFromOtherLocs(g, valueSet, locSet, "Naked Pair") || found
 		}
 	}
 
@@ -110,9 +116,8 @@ func (s *Solver) findLockedCandidates() bool {
 	found := false
 	for i := range 9 {
 		// We only need to check rows and columns for Locked Candidates.
-		found = found ||
-			s.checkLockedCandidatesForRowCol(s.rowGroups[i]) ||
-			s.checkLockedCandidatesForRowCol(s.colGroups[i])
+		found = s.checkLockedCandidatesForRowCol(s.rowGroups[i]) || found
+		found = s.checkLockedCandidatesForRowCol(s.colGroups[i]) || found
 	}
 	return found
 }
@@ -134,8 +139,8 @@ func (s *Solver) checkLockedCandidatesForRowCol(g *Group) bool {
 				return hr*3 + hc
 			})
 			locSet := set.NewSet(houseCells...)
-			found = found || s.eliminateFromOtherLocs(
-				s.houseGroups[house], valueSet, locSet, "Locked Candidate")
+			found = s.eliminateFromOtherLocs(
+				s.houseGroups[house], valueSet, locSet, "Locked Candidate") || found
 		}
 	}
 	return found
@@ -146,7 +151,7 @@ func (s *Solver) findPointingTuples() bool {
 	found := false
 	for i := range 9 {
 		// We only need to check houses for Pointing Tuples.
-		found = found || s.checkPointingTuplesForHouse(s.houseGroups[i])
+		found = s.checkPointingTuplesForHouse(s.houseGroups[i]) || found
 	}
 	return found
 }
@@ -167,16 +172,16 @@ func (s *Solver) checkPointingTuplesForHouse(g *Group) bool {
 				return c.Col
 			})
 			locSet := set.NewSet(cols...)
-			found = found || s.eliminateFromOtherLocs(
-				s.rowGroups[row], valueSet, locSet, "Pointing Tuple")
+			found = s.eliminateFromOtherLocs(
+				s.rowGroups[row], valueSet, locSet, "Pointing Tuple") || found
 		}
 		if col, ok := g.sharedCol(locs); ok {
 			rows := transformSlice(cells, func(c *board.Cell) int {
 				return c.Row
 			})
 			locSet := set.NewSet(rows...)
-			found = found || s.eliminateFromOtherLocs(
-				s.colGroups[col], valueSet, locSet, "Pointing Tuple")
+			found = s.eliminateFromOtherLocs(
+				s.colGroups[col], valueSet, locSet, "Pointing Tuple") || found
 		}
 	}
 	return found
@@ -186,10 +191,9 @@ func (s *Solver) findHiddenPairs() bool {
 	printChecking("Hidden Pair")
 	found := false
 	for i := range 9 {
-		found = found ||
-			s.checkHiddenPairsForGroup(s.rowGroups[i]) ||
-			s.checkHiddenPairsForGroup(s.colGroups[i]) ||
-			s.checkHiddenPairsForGroup(s.houseGroups[i])
+		found = s.checkHiddenPairsForGroup(s.rowGroups[i]) || found
+		found = s.checkHiddenPairsForGroup(s.colGroups[i]) || found
+		found = s.checkHiddenPairsForGroup(s.houseGroups[i]) || found
 	}
 	return found
 }
@@ -216,8 +220,7 @@ func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
 			}
 
 			valueSet := set.NewSet(x, y)
-			found = found || s.eliminateOtherValues(
-				g, valueSet, locSet, "Hidden Pair")
+			found = s.eliminateOtherValues(g, valueSet, locSet, "Hidden Pair") || found
 		}
 	}
 	return found
@@ -247,10 +250,9 @@ func (s *Solver) findNakedTriples() bool {
 	printChecking("Naked Triple")
 	found := false
 	for i := range 9 {
-		found = found ||
-			s.checkNakedTriplesForGroup(s.rowGroups[i]) ||
-			s.checkNakedTriplesForGroup(s.colGroups[i]) ||
-			s.checkNakedTriplesForGroup(s.houseGroups[i])
+		found = s.checkNakedTriplesForGroup(s.rowGroups[i]) || found
+		found = s.checkNakedTriplesForGroup(s.colGroups[i]) || found
+		found = s.checkNakedTriplesForGroup(s.houseGroups[i]) || found
 	}
 	return found
 }
@@ -282,8 +284,8 @@ func (s *Solver) checkNakedTriplesForGroup(g *Group) bool {
 				}
 
 				locSet := set.NewSet(a, b, c)
-				found = found || s.eliminateFromOtherLocs(
-					g, valueSet, locSet, "Naked Triple")
+				found = s.eliminateFromOtherLocs(
+					g, valueSet, locSet, "Naked Triple") || found
 			}
 		}
 	}
@@ -300,10 +302,9 @@ func (s *Solver) findHiddenTriples() bool {
 	printChecking("Hidden Triple")
 	found := false
 	for i := range 9 {
-		found = found ||
-			s.checkHiddenTriplesForGroup(s.rowGroups[i]) ||
-			s.checkHiddenTriplesForGroup(s.colGroups[i]) ||
-			s.checkHiddenTriplesForGroup(s.houseGroups[i])
+		found = s.checkHiddenTriplesForGroup(s.rowGroups[i]) || found
+		found = s.checkHiddenTriplesForGroup(s.colGroups[i]) || found
+		found = s.checkHiddenTriplesForGroup(s.houseGroups[i]) || found
 	}
 	return found
 }
@@ -331,8 +332,8 @@ func (s *Solver) checkHiddenTriplesForGroup(g *Group) bool {
 				}
 
 				valueSet := set.NewSet(x, y, z)
-				found = found || s.eliminateOtherValues(
-					g, valueSet, locSet, "Hidden Triple")
+				found = s.eliminateOtherValues(
+					g, valueSet, locSet, "Hidden Triple") || found
 			}
 		}
 	}
@@ -363,10 +364,9 @@ func (s *Solver) findHiddenQuadruples() bool {
 	printChecking("Hidden Quadruple")
 	found := false
 	for i := range 9 {
-		found = found ||
-			s.checkHiddenQuadruplesForGroup(s.rowGroups[i]) ||
-			s.checkHiddenQuadruplesForGroup(s.colGroups[i]) ||
-			s.checkHiddenQuadruplesForGroup(s.houseGroups[i])
+		found = s.checkHiddenQuadruplesForGroup(s.rowGroups[i]) || found
+		found = s.checkHiddenQuadruplesForGroup(s.colGroups[i]) || found
+		found = s.checkHiddenQuadruplesForGroup(s.houseGroups[i]) || found
 	}
 	return found
 }
@@ -400,8 +400,8 @@ func (s *Solver) checkHiddenQuadruplesForGroup(g *Group) bool {
 					}
 
 					valueSet := set.NewSet(w, x, y, z)
-					found = found || s.eliminateOtherValues(
-						g, valueSet, locSet, "Hidden Quadruple")
+					found = s.eliminateOtherValues(
+						g, valueSet, locSet, "Hidden Quadruple") || found
 				}
 			}
 		}
