@@ -363,8 +363,54 @@ func (s *Solver) checkHiddenTriplesForGroup(g *Group) bool {
 }
 
 func (s *Solver) findNakedQuadruples() bool {
+	printChecking("Naked Quadruple")
 	found := false
+	for i := range 9 {
+		found = s.checkNakedQuadruplesForGroup(s.rowGroups[i]) || found
+		found = s.checkNakedQuadruplesForGroup(s.colGroups[i]) || found
+		found = s.checkNakedQuadruplesForGroup(s.houseGroups[i]) || found
+	}
 	return found
+}
+
+func (s *Solver) checkNakedQuadruplesForGroup(g *Group) bool {
+	values := make(map[int]*set.Set[int8])
+	for i, c := range g.Cells {
+		// Collect a map of all locations with either 2, 3 or 4 candidate values.
+		if c.NumCandidates() == 2 || c.NumCandidates() == 3 || c.NumCandidates() == 4 {
+			values[i] = c.Candidates
+		}
+	}
+	if len(values) < 4 {
+		// We need at least 4 candidate values to have a quadruple.
+		return false
+	}
+
+	locs := mapKeys(values)
+	for i := 0; i < len(locs)-3; i++ {
+		for j := i + 1; j < len(locs)-2; j++ {
+			for k := j + 1; k < len(locs)-1; k++ {
+				for n := k + 1; n < len(locs); n++ {
+					a, b, c, d := locs[i], locs[j], locs[k], locs[n]
+					valueSet := set.Union(values[a], values[b], values[c], values[d])
+					if valueSet.Size() != 4 {
+						// If the union of the location sets does not have exactly 4 elements, then
+						// this is not a naked quadruple.
+						continue
+					}
+
+					locSet := set.NewSet(a, b, c, d)
+					if s.eliminateFromOtherLocs(
+						g, valueSet, locSet, "Naked Quadruple") {
+
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 func (s *Solver) findYWings() bool {
