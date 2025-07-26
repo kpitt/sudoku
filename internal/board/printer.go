@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	borderTop    = "┌───┬───┬───╥───┬───┬───╥───┬───┬───┐"
-	borderBot    = "└───┴───┴───╨───┴───┴───╨───┴───┴───┘"
-	dividerMinor = "├───┼───┼───╫───┼───┼───╫───┼───┼───┤"
-	dividerMajor = "╞═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╡"
+	borderTop    = "┌─────┬─────┬─────╥─────┬─────┬─────╥─────┬─────┬─────┐"
+	borderBot    = "└─────┴─────┴─────╨─────┴─────┴─────╨─────┴─────┴─────┘"
+	dividerMinor = "├─────┼─────┼─────╫─────┼─────┼─────╫─────┼─────┼─────┤"
+	dividerMajor = "╞═════╪═════╪═════╬═════╪═════╪═════╬═════╪═════╪═════╡"
 	edgeMinor    = "│"
 	edgeMajor    = "║"
 )
@@ -69,9 +69,9 @@ func printCandidateRow(row [9]*Cell, candidateRow int) {
 				cellColor = fixedValueColor
 			}
 			if candidateRow == 1 {
-				cellColor.Printf(" %d ", cell.LockedValue())
+				cellColor.Printf("  %d  ", cell.LockedValue())
 			} else {
-				cellColor.Print("   ")
+				cellColor.Print("     ")
 			}
 		} else {
 			cell.printCandidates(candidateRow)
@@ -83,6 +83,10 @@ func printCandidateRow(row [9]*Cell, candidateRow int) {
 func (c *Cell) printCandidates(candidateRow int) {
 	candidateBase := candidateRow*3 + 1
 	for col := range 3 {
+		if col > 0 {
+			// Add a space between candidates.
+			fmt.Print(" ")
+		}
 		candidate := int8(candidateBase + col)
 		if c.HasCandidate(candidate) {
 			fmt.Print(color.HiBlackString("%d", candidate))
