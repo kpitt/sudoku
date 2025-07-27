@@ -11,18 +11,18 @@ type Solver struct {
 	board *board.Board
 
 	// Map values to possible locations for each group of 9 digits.
-	rowGroups   [9]*Group
-	colGroups   [9]*Group
-	houseGroups [9]*Group
+	rowGroups   []*Group
+	colGroups   []*Group
+	houseGroups []*Group
 }
 
 func NewSolver(b *board.Board) *Solver {
 	s := &Solver{board: b}
 
 	for i := range 9 {
-		s.rowGroups[i] = NewGroup("Row")
-		s.colGroups[i] = NewGroup("Column")
-		s.houseGroups[i] = NewGroup("House")
+		s.rowGroups = append(s.rowGroups, NewGroup("Row", i))
+		s.colGroups = append(s.colGroups, NewGroup("Column", i))
+		s.houseGroups = append(s.houseGroups, NewGroup("House", i))
 	}
 
 	// Collect the cells that belong to each group.

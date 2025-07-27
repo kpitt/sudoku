@@ -313,8 +313,51 @@ func (s *Solver) checkNakedTriplesForGroup(g *Group) bool {
 }
 
 func (s *Solver) findXWings() bool {
-	found := false
+	printChecking("X-Wing")
+	found := s.findXWingsInGroups(s.rowGroups, s.colGroups)
+	found = s.findXWingsInGroups(s.colGroups, s.rowGroups) || found
 	return found
+}
+
+func (s *Solver) findXWingsInGroups(xGroups, yGroups []*Group) bool {
+	for i, xg1 := range xGroups[:8] {
+		for val, xg1Locs := range xg1.Unsolved {
+			if xg1Locs.Size() != 2 {
+				// We need exactly 2 candidates to form an X-Wing.
+				continue
+			}
+
+			valueSet := set.NewSet(val)
+			// Check the remaining x-groups for a group that also has exactly
+			// 2 candidates for the same value.
+			for _, xg2 := range xGroups[i+1:] {
+				xg2Locs := xg2.Unsolved[val]
+				if xg2Locs == nil || xg2Locs.Size() != 2 {
+					continue
+				}
+				xgLocs := set.Union(xg1Locs, xg2Locs)
+				// If xg1 and xg2 for an X-Wing, then the union of the locations
+				// will have exactly 2 entries, and the entries will be the
+				// locations of the X-Wing cells.  If the union does not have
+				// exactly 2 entries, then this is not an X-Wing.
+				if xgLocs.Size() != 2 {
+					continue
+				}
+
+				locSet := set.NewSet(xg1.BoardIndex, xg2.BoardIndex)
+				updated := false
+				for _, y := range xgLocs.Values() {
+					updated = s.eliminateFromOtherLocs(
+						yGroups[y], valueSet, locSet, "X-Wing") || updated
+				}
+				if updated {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 func (s *Solver) findHiddenTriples() bool {
