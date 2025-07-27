@@ -10,9 +10,10 @@ import (
 // that are possible locations for each digit, which makes it easier to check
 // for certain patterns.
 type Group struct {
-	Unsolved  map[int8]LocSet
-	Cells     [9]*board.Cell
-	GroupType string
+	Unsolved   map[int8]LocSet
+	Cells      [9]*board.Cell
+	GroupType  string
+	BoardIndex int
 }
 
 type (
@@ -22,10 +23,11 @@ type (
 
 var emptyLocations = set.NewSet[int]()
 
-func NewGroup(groupType string) *Group {
+func NewGroup(groupType string, index int) *Group {
 	g := &Group{
-		Unsolved:  make(map[int8]LocSet),
-		GroupType: groupType,
+		Unsolved:   make(map[int8]LocSet),
+		GroupType:  groupType,
+		BoardIndex: index,
 	}
 	for i := range 9 {
 		g.Unsolved[int8(i+1)] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
