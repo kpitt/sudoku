@@ -359,12 +359,10 @@ func (s *Solver) findXWingsInGroups(xGroups, yGroups []*Group) bool {
 				}
 
 				locSet := set.NewSet(xg1.BoardIndex, xg2.BoardIndex)
-				updated := false
-				for _, y := range xgLocs.Values() {
-					updated = s.eliminateFromOtherLocs(
-						yGroups[y], valueSet, locSet, "X-Wing") || updated
-				}
-				if updated {
+				groups := transformSlice(xgLocs.Values(), func(y int) *Group {
+					return yGroups[y]
+				})
+				if s.eliminateFromOtherLocsMulti(groups, valueSet, locSet, "X-Wing") {
 					return true
 				}
 			}
@@ -628,6 +626,120 @@ func (s *Solver) checkHiddenQuadruplesForGroup(g *Group) bool {
 				}
 			}
 		}
+	}
+
+	return false
+}
+
+func (s *Solver) findSwordfish() bool {
+	printChecking("Swordfish")
+	found := s.findSwordfishInGroups(s.rowGroups, s.colGroups)
+	found = s.findSwordfishInGroups(s.colGroups, s.rowGroups) || found
+	return found
+}
+
+func (s *Solver) findSwordfishInGroups(xGroups, yGroups []*Group) bool {
+	for _, base := range xGroups {
+		for val, locs := range base.Unsolved {
+			// A Swordfish needs at least one group with exactly 3 candidate locations
+			// for a value.
+			if locs.Size() == 3 && s.checkSwordfishForValue(val, base, xGroups, yGroups) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *Solver) checkSwordfishForValue(val int8, base *Group, xGroups, yGroups []*Group) bool {
+	// Find all x-groups other than base that have either 2 or 3 candidate
+	// locations for val.
+	candidates := filterSlice(xGroups, func(g *Group) bool {
+		numLocs := g.NumLocations(val)
+		return g.BoardIndex != base.BoardIndex && numLocs >= 2 && numLocs <= 3
+	})
+
+	valueSet := set.NewSet(val)
+	locSet := set.NewSet(base.BoardIndex)
+	baseLocs := base.Unsolved[val]
+	for _, g := range candidates {
+		locs := g.Unsolved[val]
+		if set.Union(baseLocs, locs).Size() != 3 {
+			// The locations in this group don't match the locations in base, so
+			// it can't be part of the Swordfish.
+			continue
+		}
+
+		// Add the group to the set of matched x-group indexes.  If we've found
+		// 3 matching groups, then we have a Swordfish and we can check for
+		// eliminated candidates.
+		locSet.Add(g.BoardIndex)
+		if locSet.Size() < 3 {
+			continue
+		}
+
+		groups := transformSlice(baseLocs.Values(), func(y int) *Group {
+			return yGroups[y]
+		})
+		return s.eliminateFromOtherLocsMulti(groups, valueSet, locSet, "Swordfish")
+	}
+
+	return false
+}
+
+func (s *Solver) findJellyfish() bool {
+	printChecking("Jellyfish")
+	found := s.findJellyfishInGroups(s.rowGroups, s.colGroups)
+	found = s.findJellyfishInGroups(s.colGroups, s.rowGroups) || found
+	return found
+}
+
+func (s *Solver) findJellyfishInGroups(xGroups, yGroups []*Group) bool {
+	for _, base := range xGroups {
+		for val, locs := range base.Unsolved {
+			// A Swordfish needs at least one group with exactly 4 candidate locations
+			// for a value.
+			if locs.Size() == 4 && s.checkJellyfishForValue(val, base, xGroups, yGroups) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *Solver) checkJellyfishForValue(val int8, base *Group, xGroups, yGroups []*Group) bool {
+	// Find all x-groups other than base that have at least 2 but not more than 4
+	// candidate locations for val.
+	candidates := filterSlice(xGroups, func(g *Group) bool {
+		numLocs := g.NumLocations(val)
+		return g.BoardIndex != base.BoardIndex && numLocs >= 2 && numLocs <= 4
+	})
+
+	valueSet := set.NewSet(val)
+	locSet := set.NewSet(base.BoardIndex)
+	baseLocs := base.Unsolved[val]
+	for _, g := range candidates {
+		locs := g.Unsolved[val]
+		if set.Union(baseLocs, locs).Size() != 4 {
+			// The locations in this group don't match the locations in base, so
+			// it can't be part of the Swordfish.
+			continue
+		}
+
+		// Add the group to the set of matched x-group indexes.  If we've found
+		// 4 matching groups, then we have a Jellyfish and we can check for
+		// eliminated candidates.
+		locSet.Add(g.BoardIndex)
+		if locSet.Size() < 4 {
+			continue
+		}
+
+		groups := transformSlice(baseLocs.Values(), func(y int) *Group {
+			return yGroups[y]
+		})
+		return s.eliminateFromOtherLocsMulti(groups, valueSet, locSet, "Jellyfish")
 	}
 
 	return false
