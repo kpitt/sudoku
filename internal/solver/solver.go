@@ -128,6 +128,13 @@ func (s *Solver) Solve() {
 		if s.findUniqueRectangles() {
 			continue
 		}
+		//...
+		if s.findSwordfish() {
+			continue
+		}
+		if s.findJellyfish() {
+			continue
+		}
 
 		// If we were unable to find any of the known patterns, then we've
 		// eliminated as many candidates as we can.  All we can do now is break
