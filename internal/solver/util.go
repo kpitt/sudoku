@@ -1,6 +1,9 @@
 package solver
 
-import "github.com/kpitt/sudoku/internal/board"
+import (
+	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/set"
+)
 
 func mapKeys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
@@ -49,4 +52,15 @@ func seesCell(a, b *board.Cell) bool {
 	// or the same house and they are not the same cell.
 	return !a.SameCell(b) &&
 		(a.Row == b.Row || a.Col == b.Col || a.House() == b.House())
+}
+
+// sameCandidates returns true if 2 cells a and b have exactly the same set of
+// candidate values.
+func sameCandidates(a, b *board.Cell) bool {
+	sizeA := a.NumCandidates()
+	if b.NumCandidates() != sizeA {
+		return false
+	}
+	values := set.Union(a.Candidates, b.Candidates)
+	return values.Size() == sizeA
 }
