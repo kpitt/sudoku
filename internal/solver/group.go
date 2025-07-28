@@ -16,10 +16,7 @@ type Group struct {
 	BoardIndex int
 }
 
-type (
-	LocSet         = *set.Set[int]
-	UnsolvedFilter = func(int8, LocSet) bool
-)
+type UnsolvedFilter = func(int8, LocSet) bool
 
 var emptyLocations = set.NewSet[int]()
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/set"
 )
 
 type Solver struct {
@@ -15,6 +16,11 @@ type Solver struct {
 	colGroups   []*Group
 	houseGroups []*Group
 }
+
+type (
+	LocSet = *set.Set[int]
+	ValSet = *set.Set[int8]
+)
 
 func NewSolver(b *board.Board) *Solver {
 	s := &Solver{board: b}
@@ -117,6 +123,9 @@ func (s *Solver) Solve() {
 			continue
 		}
 		if s.findHiddenQuadruples() {
+			continue
+		}
+		if s.findUniqueRectangles() {
 			continue
 		}
 
