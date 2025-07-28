@@ -61,7 +61,7 @@ func (s *Solver) findNakedPairs() bool {
 }
 
 func (s *Solver) checkNakedPairsForGroup(g *Group) bool {
-	values := make(map[int]*set.Set[int8])
+	values := make(map[int]ValSet)
 	for i, c := range g.Cells {
 		// Collect a map of all locations with exactly 2 candidate values.
 		if c.NumCandidates() == 2 {
@@ -97,7 +97,7 @@ func (s *Solver) checkNakedPairsForGroup(g *Group) bool {
 // eliminateFromOtherLocs removes the candidates listed in values from all
 // cells that are not listed in locs.
 func (s *Solver) eliminateFromOtherLocs(
-	g *Group, values *set.Set[int8], locs LocSet, basePattern string,
+	g *Group, values ValSet, locs LocSet, basePattern string,
 ) bool {
 	pattern := fmt.Sprintf("%s (%s)", basePattern, g.GroupType)
 	found := false
@@ -116,6 +116,20 @@ func (s *Solver) eliminateFromOtherLocs(
 	}
 
 	return found
+}
+
+// eliminateFromOtherLocsMulti removes the candidates listed in values from all
+// cells from each group in groups whose index is not listed in locs.  Returns
+// true if at least one candidate was eliminated
+func (s *Solver) eliminateFromOtherLocsMulti(
+	groups []*Group, values ValSet, locs LocSet, basePattern string,
+) bool {
+	updated := false
+	for _, g := range groups {
+		updated = s.eliminateFromOtherLocs(g, values, locs, basePattern) || updated
+	}
+
+	return updated
 }
 
 func (s *Solver) findLockedCandidates() bool {
@@ -247,7 +261,7 @@ func (s *Solver) checkHiddenPairsForGroup(g *Group) bool {
 // eliminateOtherValues removes candidates that are not listed in values
 // from the cells in locs.
 func (s *Solver) eliminateOtherValues(
-	g *Group, values *set.Set[int8], locs LocSet, basePattern string,
+	g *Group, values ValSet, locs LocSet, basePattern string,
 ) bool {
 	pattern := fmt.Sprintf("%s (%s)", basePattern, g.GroupType)
 	found := false
@@ -277,7 +291,7 @@ func (s *Solver) findNakedTriples() bool {
 }
 
 func (s *Solver) checkNakedTriplesForGroup(g *Group) bool {
-	values := make(map[int]*set.Set[int8])
+	values := make(map[int]ValSet)
 	for i, c := range g.Cells {
 		// Collect a map of all locations with either 2 or 3 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 {
@@ -417,7 +431,7 @@ func (s *Solver) findNakedQuadruples() bool {
 }
 
 func (s *Solver) checkNakedQuadruplesForGroup(g *Group) bool {
-	values := make(map[int]*set.Set[int8])
+	values := make(map[int]ValSet)
 	for i, c := range g.Cells {
 		// Collect a map of all locations with either 2, 3 or 4 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 || c.NumCandidates() == 4 {
@@ -617,4 +631,86 @@ func (s *Solver) checkHiddenQuadruplesForGroup(g *Group) bool {
 	}
 
 	return false
+}
+
+func (s *Solver) findUniqueRectangles() bool {
+	printChecking("Unique Rectangle")
+	found := false
+	b := s.board
+	// Check each cell with exactly 2 candidate values to see if it is the base
+	// corner of a unique rectangle.
+	for r := range 9 {
+		for c := range 9 {
+			cell := b.Cells[r][c]
+			if cell.NumCandidates() == 2 && s.checkUniqueRectangleForCell(cell) {
+				return true
+			}
+		}
+	}
+	return found
+}
+
+func (s *Solver) checkUniqueRectangleForCell(base *board.Cell) bool {
+	b := s.board
+
+	// Look for a cell in the same row as base with the same pair of candidates.
+	var rowWing *board.Cell
+	for c := range 9 {
+		if c != base.Col {
+			cell := b.Cells[base.Row][c]
+			if sameCandidates(base, cell) {
+				rowWing = cell
+				break
+			}
+		}
+	}
+	if rowWing == nil {
+		return false
+	}
+
+	// Look for a cell in the same column as base with the same pair of candidates.
+	var colWing *board.Cell
+	for r := range 9 {
+		if r != base.Row {
+			cell := b.Cells[r][base.Col]
+			if sameCandidates(base, cell) {
+				colWing = cell
+				break
+			}
+		}
+	}
+	if colWing == nil {
+		return false
+	}
+
+	// The 2 wing cells must be in different houses, but one of them must be in
+	// the same house as the base.
+	if rowWing.House() != colWing.House() &&
+		(rowWing.House() == base.House() || colWing.House() == base.House()) {
+
+		// These cells form a unique rectangle, so we can eliminate their candidates
+		// from the cell at the 4th corner of the rectangle, which will have the
+		// same row as the column-wing and the same column as the row-wing.
+		return s.eliminateValuesFromCell(
+			colWing.Row, rowWing.Col, base.Candidates, "Unique Rectangle")
+	}
+
+	return false
+}
+
+// eliminateValuesFromCell removes all candidates listed in values from the cell
+// at (r,c).
+func (s *Solver) eliminateValuesFromCell(
+	r, c int, values ValSet, pattern string,
+) bool {
+	cell := s.board.Cells[r][c]
+	found := false
+	for _, v := range values.Values() {
+		if cell.HasCandidate(v) {
+			printEliminate(pattern, r, c, v)
+			s.removeCellCandidate(r, c, v)
+			found = true
+		}
+	}
+	return found
 }
