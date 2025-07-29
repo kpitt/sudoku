@@ -579,9 +579,137 @@ func (s *Solver) findAvoidableRectangles() bool {
 	return found
 }
 
+// findXYZ searches for 3 cells that fit the "XYZ Wing" pattern.  An XYZ Wing
+// consists of a base cell with 3 candidate values x,y,z, and two wing cells
+// that each see the base cell but don't see each other.  One wing must have
+// have candidate values x,y and the other must have candidate values x,z.
+// One of these cells will have the value x, so x can be eliminated as a
+// candidate for any cell that sees all three.  Note that one wing *MUST*
+// be in the same house as the base cell.  Otherwise, is is not possible for
+// any cell to see the base and both wings.
 func (s *Solver) findXYZWings() bool {
-	found := false
-	return found
+	printChecking("XYZ Wing")
+	// Collect a list of all cells with exactly 3 candidates.
+	b := s.board
+	var candidates []*board.Cell
+	for r := range 9 {
+		for c := range 9 {
+			if b.Cells[r][c].NumCandidates() == 3 {
+				candidates = append(candidates, b.Cells[r][c])
+			}
+		}
+	}
+
+	// Check each candidate as a possible base cell for an XYZ Wing.
+	for _, base := range candidates {
+		if s.checkXYZWingsForCell(base) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Solver) checkXYZWingsForCell(base *board.Cell) bool {
+	// Find cells in the same house as base that have exactly 2 candidates which
+	// both appear in the base candidates.
+	house := s.houseGroups[base.House()]
+	var xyCells []*board.Cell
+	for _, cell := range house.Cells {
+		if cell.NumCandidates() == 2 {
+			// The base cell can't match here because it has 3 candidates.
+			values := cell.CandidateValues()
+			if base.HasCandidate(values[0]) && base.HasCandidate(values[1]) {
+				xyCells = append(xyCells, cell)
+			}
+		}
+	}
+	if len(xyCells) == 0 {
+		// No valid candidates found.
+		return false
+	}
+
+	for _, xyCell := range xyCells {
+		// Find the z value that does not appear in the xy-cell candidate.
+		var z int8
+		for _, val := range base.CandidateValues() {
+			if !xyCell.HasCandidate(val) {
+				z = val
+				break
+			}
+		}
+
+		// Now find a cell in either the row or column of base that has exactly
+		// 2 candidate values, where one candidate is z and the other is one of
+		// the candidates in xyCell.
+		isXZCandidate := func(cell *board.Cell) bool {
+			if cell.House() == base.House() ||
+				cell.NumCandidates() != 2 ||
+				!cell.HasCandidate(z) {
+
+				return false
+			}
+			for _, val := range cell.CandidateValues() {
+				if val != z && !xyCell.HasCandidate(val) {
+					return false
+				}
+			}
+			return true
+		}
+
+		r, c := base.Row, base.Col
+		for _, rowCell := range s.rowGroups[r].Cells {
+			if isXZCandidate(rowCell) &&
+				s.eliminateXYZWingCells(base, xyCell, rowCell) {
+				return true
+			}
+		}
+		for _, colCell := range s.colGroups[c].Cells {
+			if isXZCandidate(colCell) &&
+				s.eliminateXYZWingCells(base, xyCell, colCell) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// eliminateYWingCells removes candidate value x from any cells that see all
+// three of xyzCell, xyCell, and xzCell.  The value x is the one candidate value
+// that appears as a candidate in all 3 cells.  This assumes that xyCell and
+// xzCell cannot see each other, and that xyCell is in the same house as xyzCell.
+func (s *Solver) eliminateXYZWingCells(xyzCell, xyCell, xzCell *board.Cell) bool {
+	// The x value is the only common candidate between xyCell and xzCell.
+	var x int8
+	for _, val := range xyCell.CandidateValues() {
+		if xzCell.HasCandidate(val) {
+			x = val
+			break
+		}
+	}
+
+	// The only cells that could possibly see all three XYZ Wing cells are the
+	// other cells in the same house as xyzCell and xyCell, so we just need to
+	// check the candidate locations for value x in that house and select the
+	// ones that can see xzCell.
+	house := s.houseGroups[xyzCell.House()]
+	locs := house.Unsolved[x]
+	cells := house.cellsFromLocs(locs.Values())
+	cells = filterSlice(cells, func(cell *board.Cell) bool {
+		return !cell.SameCell(xyzCell) &&
+			!cell.SameCell(xyCell) &&
+			seesCell(cell, xzCell)
+	})
+	if len(cells) == 0 {
+		// No candidates found to eliminate.
+		return false
+	}
+
+	for _, xCell := range cells {
+		printEliminate("XYZ Wing", xCell.Row, xCell.Col, x)
+		s.removeCellCandidate(xCell.Row, xCell.Col, x)
+	}
+	return true
 }
 
 func (s *Solver) findHiddenQuadruples() bool {
