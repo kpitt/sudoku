@@ -148,6 +148,7 @@ func solveTimer(start time.Time) {
 	elapsed := time.Since(start)
 	color.HiYellow("Total Solver Time:   %v", elapsed)
 }
+
 func (s *Solver) LockValue(r, c int, val int8, pattern string) {
 	if s.board.LockValue(r, c, val) {
 		printFound(pattern, r, c, val)
