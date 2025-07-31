@@ -2,6 +2,7 @@ package solver
 
 import (
 	"slices"
+	"time"
 
 	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/set"
@@ -38,6 +39,7 @@ const (
 	kindFinnedXWing
 	kindFinnedSwordfish
 	kindFinnedJellyfish
+	kindBruteForce
 )
 
 // A Technique represents a single Sudoku solving technique, represented by a
@@ -79,6 +81,7 @@ func (s *Solver) initTechniques() {
 		{"Finned X-Wing", nil},
 		{"Finned Swordfish", nil},
 		{"Finned Jellyfish", nil},
+		{"Brute Force", nil}, // custom check as last resort
 	}
 }
 
@@ -964,4 +967,34 @@ func (s *Solver) eliminateValuesFromCell(
 		}
 	}
 	return found
+}
+
+// findBruteForce uses a brute force search to find a solution for any remaining
+// unsolved cells.  The search uses Donald Knuth's Algorithm X with the "Dancing
+// Links" technique.
+func (s *Solver) findBruteForce() bool {
+	dl := NewDancingLinks(s.puzzle)
+	dlOptions := &DancingLinksOptions{
+		EnableDebug: s.EnableDebug,
+		TimeLimit:   5 * time.Second,
+	}
+
+	solved, stats := dl.SolveWithStats(dlOptions)
+	if solved {
+		s.applyBruteForceSteps(dl)
+	}
+
+	// Count each backtrack in the search as an extra check.
+	s.NumChecks += stats.BacktrackCount
+	return solved
+}
+
+func (s *Solver) applyBruteForceSteps(dl *DancingLinks) {
+	steps := dl.GetSolution()
+	for _, step := range steps {
+		r, c, val := step.GetValues()
+		s.appendNextStep(NewStep(kindBruteForce).WithPlacedValue(r, c, val))
+		// Place the value in the puzzle.
+		s.puzzle.PlaceValue(r, c, val)
+	}
 }

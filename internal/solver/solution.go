@@ -75,7 +75,9 @@ func (step *SolutionStep) WithCovers(covers ...*House) *SolutionStep {
 }
 
 func (step *SolutionStep) IsSingle() bool {
-	return step.technique == kindNakedSingle || step.technique == kindHiddenSingle
+	return step.technique == kindNakedSingle ||
+		step.technique == kindHiddenSingle ||
+		step.technique == kindBruteForce
 }
 
 func (step *SolutionStep) DeleteCandidate(row, col, value int) {
@@ -135,6 +137,10 @@ func (s *Solver) getStepDescription(step *SolutionStep) string {
 	case kindTwoStringKite:
 	case kindColorChain:
 		// TODO: not implemented yet
+		break
+
+	case kindBruteForce:
+		return step.formatPlacedValue()
 	}
 
 	// If we don't have a specific description for this technique, just return
@@ -405,4 +411,9 @@ func formatDigitsSeparated(digits []int, sep rune) string {
 		result = append(result, rune('0'+d))
 	}
 	return string(result)
+}
+
+func (c *Candidate) GetValues() (row, col int, val int) {
+	row, col = rowColFromIndex(c.Index)
+	return row, col, c.Value
 }

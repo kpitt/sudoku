@@ -32,9 +32,13 @@ type (
 		SolveTime time.Duration
 	}
 
+	// Options that control the behavior of the solver.
+	// The options should be defined such that the zero-value represents the
+	// default behavior.
 	Options struct {
-		LiveLog     bool
-		EnableDebug bool
+		LiveLog          bool // print step descriptions as they are found
+		EnableDebug      bool // print additional progress info for debugging
+		EnableBruteForce bool // enable brute-force search as a last resort
 	}
 )
 
@@ -51,6 +55,7 @@ func NewSolver(p *puzzle.Puzzle, opts *Options) *Solver {
 	if opts == nil {
 		opts = &Options{}
 	}
+
 	s := &Solver{puzzle: p, Options: opts}
 	s.initTechniques()
 	s.solution = make([]*SolutionStep, 0, 81)
@@ -83,35 +88,37 @@ func NewSolver(p *puzzle.Puzzle, opts *Options) *Solver {
 	return s
 }
 
-func (s *Solver) initCandidates() {
-	s.printProgress("Initializing solver candidates")
+// processInitialValues applies the initial givens, and any other values that
+// have already been placed, to the cached Solver candidates and processes any
+// Naked Singles in the initial puzzle.
+func (s *Solver) processInitialValues() {
+	s.printProgress("Processing initial values")
 	b := s.puzzle
 	for r := range 9 {
 		for c := range 9 {
 			cell := b.Grid[r][c]
-			if cell.IsGiven {
+			if cell.IsSolved() {
 				s.eliminateCandidates(r, c, cell.Value())
 			}
 		}
 	}
 }
 
-// Solve attempts to solve a Sudoku puzzle by repeatedly applying known deductive
-// solving techniques to find solved cells and eliminate candidate values until
-// the puzzle is completely solved, or until no more candidates can be eliminated
-// (partial solution).
+// Solve attempts to solve a Sudoku puzzle by first applying known deductive
+// solving techniques. If those don't solve the puzzle completely, it falls back
+// to using the Dancing Links algorithm as a last resort.
 func (s *Solver) Solve() {
 	defer s.solveTimer(time.Now())
 
-	s.initCandidates()
+	s.processInitialValues()
 
 	s.NumChecks = 0
 SolverLoop:
 	for !s.puzzle.IsSolved() {
 		// Check techniques in roughly the order that a human solver would apply
 		// them, starting with the simplest techniques and moving to more complex
-		// ones.  If a check results in any change to the puzzle state, then
-		// restart the solver loop.  Otherwise, move on to the next technique.
+		// ones. If a check results in any change to the puzzle state, then
+		// restart the solver loop. Otherwise, move on to the next technique.
 
 		for _, t := range s.techniques {
 			if t.Check != nil {
@@ -123,10 +130,21 @@ SolverLoop:
 			}
 		}
 
-		// If none of the known techniques allow us to eliminate any additional
-		// candidates, then we've solved as much of the puzzle as we can, so
-		// all we can do is exit with a partial solution.
+		// If we get here, then the known techniques were not sufficient to find
+		// a solution, so just exit with a partial solution.
 		break
+	}
+
+	// If we didn't get a complete solution, use a "Dancing Links" brute-force
+	// search as a last resort to solve the remaining cells.
+	// Note that we could end up here because the puzzle has multiple solutions,
+	// but it would be expensive to test every possible path to ensure that the
+	// solution is unique. We just assume that the puzzle has only one solution,
+	// and always use the first solution found.
+	if !s.puzzle.IsSolved() && s.EnableBruteForce {
+		s.printChecking("Brute Force")
+		s.NumChecks += 1
+		s.findBruteForce()
 	}
 }
 
@@ -202,11 +220,15 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 	}
 }
 
-func (s *Solver) applyStep(step *SolutionStep) {
+func (s *Solver) appendNextStep(step *SolutionStep) {
 	s.solution = append(s.solution, step)
 	if s.LiveLog {
 		fmt.Printf("%2d. %s\n", len(s.solution), s.FormatStep(step))
 	}
+}
+
+func (s *Solver) applyStep(step *SolutionStep) {
+	s.appendNextStep(step)
 	if step.IsSingle() {
 		// Place the value for this step in the puzzle grid.
 		index := step.indices[0]
@@ -219,4 +241,25 @@ func (s *Solver) applyStep(step *SolutionStep) {
 			s.removeCellCandidate(r, c, dc.Value)
 		}
 	}
+}
+
+// SolveBruteForce uses only the "Dancing Links" brute force search to solve
+// the puzzle.  This is provided primarily for comparing the performance of
+// the deductive solver against a pure brute-force approach.
+func (s *Solver) SolveBruteForce() {
+	defer s.solveTimer(time.Now())
+
+	dl := NewDancingLinks(s.puzzle)
+	dlOptions := &DancingLinksOptions{
+		EnableDebug: s.EnableDebug,
+		TimeLimit:   5 * time.Second,
+	}
+
+	solved, stats := dl.SolveWithStats(dlOptions)
+	if solved {
+		s.applyBruteForceSteps(dl)
+	}
+
+	// Count each backtrack in the search as a check.
+	s.NumChecks = stats.BacktrackCount
 }

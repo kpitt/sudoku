@@ -26,31 +26,32 @@ func main() {
 	p.Print()
 	fmt.Println()
 
-	opts := &solver.Options{EnableDebug: true, LiveLog: true}
+	opts := &solver.Options{
+		// EnableDebug:      true,
+		// LiveLog:          true,
+		EnableBruteForce: true,
+	}
 	s := solver.NewSolver(p, opts)
 	s.Solve()
 
-	if opts.LiveLog {
-		// Add a line break between the live-log and the solution.
-		fmt.Println()
-	}
 	if p.IsSolved() {
+		fmt.Printf("%s (%v, %d checks)\n\n",
+			color.HiGreenString("✓ Solved successfully"),
+			s.SolveTime, s.NumChecks)
 		color.HiBlue("Solution:")
 		p.Print()
 	} else {
+		fmt.Printf("%s (%v, %d checks)\n\n",
+			color.HiRedString("✗ Failed to solve"),
+			s.SolveTime, s.NumChecks)
 		color.HiBlue("Partial Solution:")
 		p.PrintCandidateGrid()
-	}
-
-	fmt.Println()
-	color.HiYellow("Total Checks:     %d", s.NumChecks)
-	color.HiYellow("Total Solve Time: %v", s.SolveTime)
-
-	if !p.IsSolved() {
 		fmt.Println()
 		p.PrintUnsolvedCounts()
-	} else if !opts.LiveLog {
-		// Only print solution if steps were not already live-logged.
+	}
+
+	// Only print solution if steps were not already live-logged.
+	if !opts.LiveLog {
 		fmt.Println()
 		s.PrintSolution()
 	}

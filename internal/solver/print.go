@@ -7,15 +7,18 @@ import (
 )
 
 func (s *Solver) printProgress(format string, a ...any) {
-	if !s.EnableDebug {
-		return
+	if s.EnableDebug {
+		printDebug(format, a...)
 	}
-	msg := fmt.Sprintf(format, a...)
-	fmt.Fprintln(color.Error, color.HiBlackString(">>> %s", msg))
 }
 
 func (s *Solver) printChecking(name string) {
 	s.printProgress("Checking %q technique", name)
+}
+
+func printDebug(format string, a ...any) {
+	msg := fmt.Sprintf(format, a...)
+	fmt.Fprintln(color.Error, color.HiBlackString(">>> %s", msg))
 }
 
 func (s *Solver) PrintStep(step *SolutionStep) {

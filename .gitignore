@@ -1,4 +1,9 @@
+bin/
 solver.test
+
+# Profiling output files
 *.prof
+# Code coverage report files
+coverage.*
 
 .idea/

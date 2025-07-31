@@ -60,6 +60,61 @@ func (p *Puzzle) PlaceValue(r, c int, val int) bool {
 	return true
 }
 
+// ValidateSolution checks if the current puzzle state is a valid Sudoku solution.
+func (p *Puzzle) ValidateSolution() error {
+	// Check if all cells are filled
+	for r := range 9 {
+		for c := range 9 {
+			if !p.Grid[r][c].IsSolved() {
+				return fmt.Errorf("cell r%d,c%d is not filled", r+1, c+1)
+			}
+		}
+	}
+
+	// Check row constraints
+	for r := range 9 {
+		seen := make(map[int]bool)
+		for c := range 9 {
+			val := p.Grid[r][c].Value()
+			if val < 1 || val > 9 {
+				return fmt.Errorf("invalid value %d in cell r%dc%d", val, r+1, c+1)
+			}
+			if seen[val] {
+				return fmt.Errorf("duplicate value %d in row %d", val, r+1)
+			}
+			seen[val] = true
+		}
+	}
+
+	// Check column constraints
+	for c := range 9 {
+		seen := make(map[int]bool)
+		for r := range 9 {
+			val := p.Grid[r][c].Value()
+			if seen[val] {
+				return fmt.Errorf("duplicate value %d in column %d", val, c+1)
+			}
+			seen[val] = true
+		}
+	}
+
+	// Check box constraints
+	for box := range 9 {
+		seen := make(map[int]bool)
+		boxRow, boxCol := box/3, box%3
+		for i := range 9 {
+			r, c := boxRow*3+i/3, boxCol*3+i%3
+			val := p.Grid[r][c].Value()
+			if seen[val] {
+				return fmt.Errorf("duplicate value %d in box %d", val, box+1)
+			}
+			seen[val] = true
+		}
+	}
+
+	return nil
+}
+
 // updatePuzzleState updates the valid candidates and unsolved counts after a
 // value of val is placed in cell (r,c).
 func (p *Puzzle) updatePuzzleState(r, c int, val int) {

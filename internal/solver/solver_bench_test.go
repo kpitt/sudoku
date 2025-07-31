@@ -44,13 +44,16 @@ var benchmarkCases = []struct {
 	{"Impossible2", "impossible", "47...9....9.1..3......8.27....5.19.4....7....6.4..8....58.9....3....6......8...2."},
 
 	// Extra puzzles with unknown difficulty
-	// TurbotFish is not solvable yet. It requires Skyscraper and 2-String Kite techniques.
-	// {"TurbotFish", "", "000400100000705032032000700001080605070000020503010800008000560650803000007001000"},
+	// TurbotFish requires Skyscraper and 2-String Kite techniques, which have not been implemented yet,
+	// so it currently requires brute-force to complete the solution.
+	{"TurbotFish", "", "000400100000705032032000700001080605070000020503010800008000560650803000007001000"},
 	{"Extended1", "", ".93.1...4.5...7.....14.....6...9.....3.5.8.7.....7...97.....1.....1...5.5...4..6."},
 }
 
 // BenchmarkSolve benchmarks the Solve method across different difficulty levels.
 func BenchmarkSolve(b *testing.B) {
+	opts := &Options{EnableBruteForce: true}
+
 	for _, tc := range benchmarkCases {
 		b.Run(tc.name, func(b *testing.B) {
 			// Load the puzzle once before the benchmark loop
@@ -58,8 +61,6 @@ func BenchmarkSolve(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Failed to load puzzle %s: %v", tc.name, err)
 			}
-
-			opts := &Options{}
 
 			for b.Loop() {
 				// Create a fresh copy of the puzzle for each iteration
@@ -171,14 +172,14 @@ func BenchmarkNewSolver(b *testing.B) {
 
 // BenchmarkSolveMemory benchmarks memory allocations for different difficulty levels.
 func BenchmarkSolveMemory(b *testing.B) {
+	opts := &Options{}
+
 	for _, tc := range comparisonCases {
 		b.Run(tc.name, func(b *testing.B) {
 			originalPuzzle, err := puzzle.FromString(tc.puzzle)
 			if err != nil {
 				b.Fatalf("Failed to load %s puzzle: %v", tc.name, err)
 			}
-
-			opts := &Options{}
 
 			b.ReportAllocs()
 			for b.Loop() {
@@ -195,10 +196,40 @@ func BenchmarkSolveMemory(b *testing.B) {
 // BenchmarkComparison runs a quick comparison benchmark across all difficulty levels.
 // This is useful for getting a quick overview of performance characteristics.
 func BenchmarkComparison(b *testing.B) {
-	opts := &Options{
-		LiveLog:     false,
-		EnableDebug: false,
+	opts := &Options{}
+
+	for _, tc := range comparisonCases {
+		b.Run(tc.name, func(b *testing.B) {
+			originalPuzzle, err := puzzle.FromString(tc.puzzle)
+			if err != nil {
+				b.Fatalf("Failed to load %s puzzle: %v", tc.name, err)
+			}
+
+			var totalChecks int64
+			b.ReportAllocs()
+
+			for b.Loop() {
+				// Create a fresh copy of the puzzle for each iteration
+				puzzleCopy := copyPuzzle(originalPuzzle)
+
+				solver := NewSolver(puzzleCopy, opts)
+				solver.Solve()
+
+				totalChecks += int64(solver.NumChecks)
+			}
+
+			// Report average number of technique checks per solve
+			avgChecks := float64(totalChecks) / float64(b.N)
+			b.ReportMetric(avgChecks, "checks/op")
+		})
 	}
+}
+
+// BenchmarkBruteForce runs a quick comparison benchmark for a brute-force only
+// solution across all difficulty levels.  This is useful for performance
+// comparisons between the deductive solver and the brute-force solver.
+func BenchmarkBruteForce(b *testing.B) {
+	opts := &Options{}
 
 	for _, tc := range comparisonCases {
 		b.Run(tc.name, func(b *testing.B) {
