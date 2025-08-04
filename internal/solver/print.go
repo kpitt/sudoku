@@ -15,10 +15,14 @@ func printChecking(name string) {
 	printProgress("Trying %q technique", name)
 }
 
-func printFound(name string, r, c int, val int8) {
-	fmt.Fprintf(os.Stderr, "%s: (%d,%d) = %d\n", name, r+1, c+1, val)
+func printFound(name string, r, c int, val int) {
+	fmt.Fprintf(os.Stderr, "%s: %s=%d\n", name, formatCellRef(r, c), val)
 }
 
-func printEliminate(name string, r, c int, val int8) {
-	fmt.Fprintf(os.Stderr, "%s: eliminate %d at (%d,%d)\n", name, val, r+1, c+1)
+func printEliminate(name string, r, c int, val int) {
+	fmt.Fprintf(os.Stderr, "%s: => %s<>%d\n", name, formatCellRef(r, c), val)
+}
+
+func formatCellRef(r, c int) string {
+	return fmt.Sprintf("r%dc%d", r+1, c+1)
 }

@@ -61,7 +61,7 @@ func (s *Solver) findNakedPairs() bool {
 }
 
 func (s *Solver) checkNakedPairsForHouse(h *House) bool {
-	values := make(map[int]ValSet)
+	values := make(LocValMap)
 	for i, c := range h.Cells {
 		// Collect a map of all locations with exactly 2 candidate values.
 		if c.NumCandidates() == 2 {
@@ -144,7 +144,7 @@ func (s *Solver) findLockedCandidates() bool {
 }
 
 func (s *Solver) checkLockedCandidatesForLine(line *House) bool {
-	candidates := filterMap(line.Unsolved, func(_ int8, l LocSet) bool {
+	candidates := filterMap(line.Unsolved, func(_ int, l LocSet) bool {
 		// If we have more than 3 candidates in a line, then they can't all be
 		// in the same box.
 		return l.Size() <= 3
@@ -181,7 +181,7 @@ func (s *Solver) findPointingTuples() bool {
 }
 
 func (s *Solver) checkPointingTuplesForBox(box *House) bool {
-	candidates := filterMap(box.Unsolved, func(_ int8, l LocSet) bool {
+	candidates := filterMap(box.Unsolved, func(_ int, l LocSet) bool {
 		// If we have more than 3 candidates in a single box, then they can't all
 		// be in the same line.
 		return l.Size() <= 3
@@ -229,7 +229,7 @@ func (s *Solver) findHiddenPairs() bool {
 }
 
 func (s *Solver) checkHiddenPairsForHouse(h *House) bool {
-	locs := filterMap(h.Unsolved, func(_ int8, l LocSet) bool {
+	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
 		return l.Size() == 2
 	})
 	if len(locs) < 2 {
@@ -291,7 +291,7 @@ func (s *Solver) findNakedTriples() bool {
 }
 
 func (s *Solver) checkNakedTriplesForHouse(h *House) bool {
-	values := make(map[int]ValSet)
+	values := make(LocValMap)
 	for i, c := range h.Cells {
 		// Collect a map of all locations with either 2 or 3 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 {
@@ -387,7 +387,7 @@ func (s *Solver) findHiddenTriples() bool {
 }
 
 func (s *Solver) checkHiddenTriplesForHouse(h *House) bool {
-	locs := filterMap(h.Unsolved, func(_ int8, l LocSet) bool {
+	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3
 	})
 	if len(locs) < 3 {
@@ -430,7 +430,7 @@ func (s *Solver) findNakedQuadruples() bool {
 }
 
 func (s *Solver) checkNakedQuadruplesForHouse(h *House) bool {
-	values := make(map[int]ValSet)
+	values := make(LocValMap)
 	for i, c := range h.Cells {
 		// Collect a map of all locations with either 2, 3 or 4 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 || c.NumCandidates() == 4 {
@@ -548,7 +548,7 @@ func (s *Solver) checkXYWingsForPivot(
 
 // eliminateYWingCells removes candidate value z from all cells that see both
 // xCell and yCell.  This assumes that xCell and yCell cannot see each other.
-func (s *Solver) eliminateXYWingCells(z int8, xCell, yCell *puzzle.Cell) bool {
+func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell) bool {
 	seesYCell := func(cell *puzzle.Cell) bool {
 		return seesCell(cell, yCell)
 	}
@@ -631,7 +631,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) bool {
 
 	for _, xzCell := range xzCells {
 		// Find the y value that does not appear in the xz-cell candidate.
-		var y int8
+		var y int
 		for _, val := range pivot.CandidateValues() {
 			if !xzCell.HasCandidate(val) {
 				y = val
@@ -681,7 +681,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) bool {
 // yzCell cannot see each other, and that xzCell is in the same box as xyzCell.
 func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell) bool {
 	// The z value is the only common candidate between xzCell and yzCell.
-	var z int8
+	var z int
 	for _, val := range xzCell.CandidateValues() {
 		if yzCell.HasCandidate(val) {
 			z = val
@@ -725,7 +725,7 @@ func (s *Solver) findHiddenQuadruples() bool {
 }
 
 func (s *Solver) checkHiddenQuadruplesForHouse(h *House) bool {
-	locs := filterMap(h.Unsolved, func(_ int8, l LocSet) bool {
+	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3 || l.Size() == 4
 	})
 	if len(locs) < 4 {
@@ -781,7 +781,7 @@ func (s *Solver) findSwordfishInLines(baseLines, coverLines []*House) bool {
 	return false
 }
 
-func (s *Solver) checkSwordfishForValue(val int8, base1 *House, baseLines, coverLines []*House) bool {
+func (s *Solver) checkSwordfishForValue(val int, base1 *House, baseLines, coverLines []*House) bool {
 	// Find all base lines other than base1 that have either 2 or 3 candidate
 	// locations for val.
 	candidates := filterSlice(baseLines, func(b2 *House) bool {
@@ -838,7 +838,7 @@ func (s *Solver) findJellyfishInLines(baseLines, coverLines []*House) bool {
 	return false
 }
 
-func (s *Solver) checkJellyfishForValue(val int8, base1 *House, baseLines, coverLines []*House) bool {
+func (s *Solver) checkJellyfishForValue(val int, base1 *House, baseLines, coverLines []*House) bool {
 	// Find all base lines other than base1 that have at least 2 but not more
 	// than 4 candidate locations for val.
 	candidates := filterSlice(baseLines, func(b2 *House) bool {

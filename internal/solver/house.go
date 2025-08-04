@@ -10,30 +10,30 @@ import (
 // locations for that value, which makes it easier to check for certain
 // patterns.
 type House struct {
-	Unsolved map[int8]LocSet
+	Unsolved ValLocMap
 	Cells    [9]*puzzle.Cell
 	Type     string
 	Index    int
 }
 
-type UnsolvedFilter = func(int8, LocSet) bool
+type UnsolvedFilter = func(int, LocSet) bool
 
 var emptyLocations = set.NewSet[int]()
 
 func NewHouse(houseType string, index int) *House {
 	h := &House{
-		Unsolved: make(map[int8]LocSet),
+		Unsolved: make(ValLocMap),
 		Type:     houseType,
 		Index:    index,
 	}
 	for i := range 9 {
-		h.Unsolved[int8(i+1)] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
+		h.Unsolved[i+1] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
 	}
 	return h
 }
 
 // RemoveCandidateCell removes cell from the candidate locations for value val.
-func (h *House) RemoveCandidateCell(val int8, cell int) {
+func (h *House) RemoveCandidateCell(val int, cell int) {
 	if cells := h.Unsolved[val]; cells != nil {
 		cells.Remove(cell)
 		if cells.Size() == 0 {
@@ -44,7 +44,7 @@ func (h *House) RemoveCandidateCell(val int8, cell int) {
 
 // RemoveCandidateValue removes all candidate locations that conflict with a
 // locked value of val in cell.
-func (h *House) RemoveCandidateValue(val int8, cell int) {
+func (h *House) RemoveCandidateValue(val int, cell int) {
 	// val is no longer an unsolved candidate for any cell in this house.
 	delete(h.Unsolved, val)
 	// If cell is locked, then no other value can appear in that location.
@@ -57,22 +57,22 @@ func (h *House) NumUnsolved() int {
 	return len(h.Unsolved)
 }
 
-func (h *House) UnsolvedDigits() []int8 {
-	digits := make([]int8, 0, len(h.Unsolved))
+func (h *House) UnsolvedDigits() []int {
+	digits := make([]int, 0, len(h.Unsolved))
 	for k := range h.Unsolved {
 		digits = append(digits, k)
 	}
 	return digits
 }
 
-func (h *House) NumLocations(val int8) int {
+func (h *House) NumLocations(val int) int {
 	if loc, ok := h.Unsolved[val]; ok {
 		return loc.Size()
 	}
 	return 0
 }
 
-func (h *House) Locations(val int8) LocSet {
+func (h *House) Locations(val int) LocSet {
 	if loc, ok := h.Unsolved[val]; ok {
 		return loc
 	}
