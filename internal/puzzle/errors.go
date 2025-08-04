@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func boardStateError(msg string) {
-	fatalError("invalid board state", msg)
+func puzzleStateError(msg string) {
+	fatalError("invalid puzzle state", msg)
 }
 
 func fatalError(msgs ...string) {
