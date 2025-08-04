@@ -1,7 +1,7 @@
 package solver
 
 import (
-	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/set"
 )
 
@@ -11,7 +11,7 @@ import (
 // for certain patterns.
 type Group struct {
 	Unsolved   map[int8]LocSet
-	Cells      [9]*board.Cell
+	Cells      [9]*puzzle.Cell
 	GroupType  string
 	BoardIndex int
 }
@@ -118,8 +118,8 @@ func (g *Group) sharedHouse(locs LocSet) (house int, ok bool) {
 	return house, true
 }
 
-func (g *Group) cellsFromLocs(locs []int) []*board.Cell {
-	return transformSlice(locs, func(l int) *board.Cell {
+func (g *Group) cellsFromLocs(locs []int) []*puzzle.Cell {
+	return transformSlice(locs, func(l int) *puzzle.Cell {
 		return g.Cells[l]
 	})
 }

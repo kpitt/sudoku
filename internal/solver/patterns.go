@@ -3,7 +3,7 @@ package solver
 import (
 	"fmt"
 
-	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/set"
 )
 
@@ -154,7 +154,7 @@ func (s *Solver) checkLockedCandidatesForRowCol(g *Group) bool {
 		valueSet := set.NewSet(val)
 		cells := g.cellsFromLocs(locs.Values())
 		if house, ok := g.sharedHouse(locs); ok {
-			houseCells := transformSlice(cells, func(c *board.Cell) int {
+			houseCells := transformSlice(cells, func(c *puzzle.Cell) int {
 				_, hr, hc := c.HouseCoordinates()
 				return hr*3 + hc
 			})
@@ -191,7 +191,7 @@ func (s *Solver) checkPointingTuplesForHouse(g *Group) bool {
 		valueSet := set.NewSet(val)
 		cells := g.cellsFromLocs(locs.Values())
 		if row, ok := g.sharedRow(locs); ok {
-			cols := transformSlice(cells, func(c *board.Cell) int {
+			cols := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Col
 			})
 			locSet := set.NewSet(cols...)
@@ -202,7 +202,7 @@ func (s *Solver) checkPointingTuplesForHouse(g *Group) bool {
 			}
 		}
 		if col, ok := g.sharedCol(locs); ok {
-			rows := transformSlice(cells, func(c *board.Cell) int {
+			rows := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Row
 			})
 			locSet := set.NewSet(rows...)
@@ -472,7 +472,7 @@ func (s *Solver) findYWings() bool {
 	printChecking("Y Wing")
 	// Collect a list of all cells with exactly 2 candidates.
 	b := s.board
-	var candidates []*board.Cell
+	var candidates []*puzzle.Cell
 	for r := range 9 {
 		for c := range 9 {
 			if b.Cells[r][c].NumCandidates() == 2 {
@@ -497,7 +497,7 @@ func (s *Solver) findYWings() bool {
 }
 
 func (s *Solver) checkYWingsForCell(
-	base *board.Cell, candidates []*board.Cell,
+	base *puzzle.Cell, candidates []*puzzle.Cell,
 ) bool {
 	// Get the base x and y values.
 	values := base.CandidateValues()
@@ -506,7 +506,7 @@ func (s *Solver) checkYWingsForCell(
 	// Find the candidate cells that can be seen by the base cell and have either
 	// x or y as a candidate, but not both.  Collect the cells into separate lists
 	// for cells that have x but not y and cells that have y but not x.
-	var xCells, yCells []*board.Cell
+	var xCells, yCells []*puzzle.Cell
 	for _, cell := range candidates {
 		if cell.SameCell(base) || cell.NumCandidates() != 2 || !seesCell(cell, base) {
 			continue
@@ -547,8 +547,8 @@ func (s *Solver) checkYWingsForCell(
 
 // eliminateYWingCells removes candidate value z from all cells that see both
 // xCell and yCell.  This assumes that xCell and yCell cannot see each other.
-func (s *Solver) eliminateYWingCells(z int8, xCell, yCell *board.Cell) bool {
-	seesYCell := func(cell *board.Cell) bool {
+func (s *Solver) eliminateYWingCells(z int8, xCell, yCell *puzzle.Cell) bool {
+	seesYCell := func(cell *puzzle.Cell) bool {
 		return seesCell(cell, yCell)
 	}
 	removeZs := func(g *Group) bool {
@@ -591,7 +591,7 @@ func (s *Solver) findXYZWings() bool {
 	printChecking("XYZ Wing")
 	// Collect a list of all cells with exactly 3 candidates.
 	b := s.board
-	var candidates []*board.Cell
+	var candidates []*puzzle.Cell
 	for r := range 9 {
 		for c := range 9 {
 			if b.Cells[r][c].NumCandidates() == 3 {
@@ -609,11 +609,11 @@ func (s *Solver) findXYZWings() bool {
 	return false
 }
 
-func (s *Solver) checkXYZWingsForCell(base *board.Cell) bool {
+func (s *Solver) checkXYZWingsForCell(base *puzzle.Cell) bool {
 	// Find cells in the same house as base that have exactly 2 candidates which
 	// both appear in the base candidates.
 	house := s.houseGroups[base.House()]
-	var xyCells []*board.Cell
+	var xyCells []*puzzle.Cell
 	for _, cell := range house.Cells {
 		if cell.NumCandidates() == 2 {
 			// The base cell can't match here because it has 3 candidates.
@@ -641,7 +641,7 @@ func (s *Solver) checkXYZWingsForCell(base *board.Cell) bool {
 		// Now find a cell in either the row or column of base that has exactly
 		// 2 candidate values, where one candidate is z and the other is one of
 		// the candidates in xyCell.
-		isXZCandidate := func(cell *board.Cell) bool {
+		isXZCandidate := func(cell *puzzle.Cell) bool {
 			if cell.House() == base.House() ||
 				cell.NumCandidates() != 2 ||
 				!cell.HasCandidate(z) {
@@ -678,7 +678,7 @@ func (s *Solver) checkXYZWingsForCell(base *board.Cell) bool {
 // three of xyzCell, xyCell, and xzCell.  The value x is the one candidate value
 // that appears as a candidate in all 3 cells.  This assumes that xyCell and
 // xzCell cannot see each other, and that xyCell is in the same house as xyzCell.
-func (s *Solver) eliminateXYZWingCells(xyzCell, xyCell, xzCell *board.Cell) bool {
+func (s *Solver) eliminateXYZWingCells(xyzCell, xyCell, xzCell *puzzle.Cell) bool {
 	// The x value is the only common candidate between xyCell and xzCell.
 	var x int8
 	for _, val := range xyCell.CandidateValues() {
@@ -695,7 +695,7 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xyCell, xzCell *board.Cell) bool
 	house := s.houseGroups[xyzCell.House()]
 	locs := house.Unsolved[x]
 	cells := house.cellsFromLocs(locs.Values())
-	cells = filterSlice(cells, func(cell *board.Cell) bool {
+	cells = filterSlice(cells, func(cell *puzzle.Cell) bool {
 		return !cell.SameCell(xyzCell) &&
 			!cell.SameCell(xyCell) &&
 			seesCell(cell, xzCell)
@@ -890,11 +890,11 @@ func (s *Solver) findUniqueRectangles() bool {
 	return found
 }
 
-func (s *Solver) checkUniqueRectangleForCell(base *board.Cell) bool {
+func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) bool {
 	b := s.board
 
 	// Look for a cell in the same row as base with the same pair of candidates.
-	var rowWing *board.Cell
+	var rowWing *puzzle.Cell
 	for c := range 9 {
 		if c != base.Col {
 			cell := b.Cells[base.Row][c]
@@ -909,7 +909,7 @@ func (s *Solver) checkUniqueRectangleForCell(base *board.Cell) bool {
 	}
 
 	// Look for a cell in the same column as base with the same pair of candidates.
-	var colWing *board.Cell
+	var colWing *puzzle.Cell
 	for r := range 9 {
 		if r != base.Row {
 			cell := b.Cells[r][base.Col]

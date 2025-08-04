@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/solver"
 	"github.com/mattn/go-isatty"
 )
@@ -17,7 +17,7 @@ func main() {
 		fmt.Println("(Ctrl+D to finish on Unix/Linux, Ctrl+Z then Enter on Windows):")
 	}
 
-	b := board.ReadBoard(os.Stdin)
+	b := puzzle.ReadBoard(os.Stdin)
 	s := solver.NewSolver(b)
 	s.Solve()
 

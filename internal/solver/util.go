@@ -1,7 +1,7 @@
 package solver
 
 import (
-	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/set"
 )
 
@@ -47,7 +47,7 @@ func transformSlice[TSource, TTarget any](
 
 // seesCell returns true if cell a sees cell b (i.e. they share a row, column,
 // or house).
-func seesCell(a, b *board.Cell) bool {
+func seesCell(a, b *puzzle.Cell) bool {
 	// Two cells can see each other if they have the same row, the same column,
 	// or the same house and they are not the same cell.
 	return !a.SameCell(b) &&
@@ -56,7 +56,7 @@ func seesCell(a, b *board.Cell) bool {
 
 // sameCandidates returns true if 2 cells a and b have exactly the same set of
 // candidate values.
-func sameCandidates(a, b *board.Cell) bool {
+func sameCandidates(a, b *puzzle.Cell) bool {
 	sizeA := a.NumCandidates()
 	if b.NumCandidates() != sizeA {
 		return false
