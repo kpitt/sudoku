@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/kpitt/sudoku/internal/board"
+	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/set"
 )
 
 type Solver struct {
-	board *board.Board
+	board *puzzle.Board
 
 	// Map values to possible locations for each group of 9 digits.
 	rowGroups   []*Group
@@ -22,7 +22,7 @@ type (
 	ValSet = *set.Set[int8]
 )
 
-func NewSolver(b *board.Board) *Solver {
+func NewSolver(b *puzzle.Board) *Solver {
 	s := &Solver{board: b}
 
 	for i := range 9 {

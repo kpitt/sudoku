@@ -1,4 +1,4 @@
-package board
+package puzzle
 
 import "github.com/kpitt/sudoku/internal/set"
 
