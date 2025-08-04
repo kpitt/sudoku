@@ -6,14 +6,14 @@ type Cell struct {
 	Row, Col int
 	IsGiven  bool
 
-	value      int8
-	Candidates *set.Set[int8]
+	value      int
+	Candidates *set.Set[int]
 }
 
 func NewCell(r, c int) *Cell {
 	return &Cell{
 		Row: r, Col: c,
-		Candidates: set.NewSet[int8](1, 2, 3, 4, 5, 6, 7, 8, 9),
+		Candidates: set.NewSet[int](1, 2, 3, 4, 5, 6, 7, 8, 9),
 	}
 }
 
@@ -22,20 +22,20 @@ func (c *Cell) IsSolved() bool {
 	return c.value > 0
 }
 
-func (c *Cell) Value() int8 {
+func (c *Cell) Value() int {
 	return c.value
 }
 
 // PlaceValue places a solved value into the cell, clearing any remaining
 // candidates.
-func (c *Cell) PlaceValue(val int8) {
+func (c *Cell) PlaceValue(val int) {
 	c.value = val
 	c.Candidates.Clear()
 }
 
 // GivenValue places an initial value into the cell, marking it as a given
 // value that cannot be changed.  This is used for the initial puzzle setup.
-func (c *Cell) GivenValue(val int8) {
+func (c *Cell) GivenValue(val int) {
 	c.IsGiven = true
 	c.PlaceValue(val)
 }
@@ -44,15 +44,15 @@ func (c *Cell) NumCandidates() int {
 	return c.Candidates.Size()
 }
 
-func (c *Cell) CandidateValues() []int8 {
+func (c *Cell) CandidateValues() []int {
 	return c.Candidates.Values()
 }
 
-func (c *Cell) HasCandidate(val int8) bool {
+func (c *Cell) HasCandidate(val int) bool {
 	return c.Candidates.Contains(val)
 }
 
-func (c *Cell) RemoveCandidate(val int8) {
+func (c *Cell) RemoveCandidate(val int) {
 	c.Candidates.Remove(val)
 }
 

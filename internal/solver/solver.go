@@ -17,8 +17,12 @@ type Solver struct {
 }
 
 type (
-	LocSet = *set.Set[int]
-	ValSet = *set.Set[int8]
+	// Convenient type aliases that give semantic meaning to commonly used
+	// maps and sets.
+	LocSet    = *set.Set[int]
+	ValSet    = *set.Set[int]
+	LocValMap = map[int]ValSet
+	ValLocMap = map[int]LocSet
 )
 
 func NewSolver(p *puzzle.Puzzle) *Solver {
@@ -150,7 +154,7 @@ func solveTimer(start time.Time) {
 	color.HiYellow("Total Solver Time:   %v", elapsed)
 }
 
-func (s *Solver) PlaceValue(r, c int, val int8, technique string) {
+func (s *Solver) PlaceValue(r, c int, val int, technique string) {
 	if s.puzzle.PlaceValue(r, c, val) {
 		printFound(technique, r, c, val)
 		s.eliminateCandidates(r, c, val)
@@ -160,7 +164,7 @@ func (s *Solver) PlaceValue(r, c int, val int8, technique string) {
 // eliminateCandidates removes val as a candidate value for row r, column c, and
 // the box containing cell (r,c).  It also removes cell (r,c) as a possible
 // location for any other values in the same row, column, or box.
-func (s *Solver) eliminateCandidates(r, c int, val int8) {
+func (s *Solver) eliminateCandidates(r, c int, val int) {
 	// Remove value from the cached candidates for the row, column, and box of
 	// cell (r,c).
 	s.rows[r].RemoveCandidateValue(val, c)
@@ -176,7 +180,7 @@ func (s *Solver) eliminateCandidates(r, c int, val int8) {
 	}
 }
 
-func (s *Solver) removeCellCandidate(r, c int, val int8) {
+func (s *Solver) removeCellCandidate(r, c int, val int) {
 	b := s.puzzle
 	cell := b.Grid[r][c]
 	if cell.IsSolved() || !cell.HasCandidate(val) {

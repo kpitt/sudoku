@@ -38,7 +38,7 @@ func (p *Puzzle) Print() {
 func (p *Puzzle) PrintUnsolvedCounts() {
 	color.HiWhite("Unsolved Digits:")
 	for i := range 9 {
-		digit := int8(i + 1)
+		digit := i + 1
 		if !p.IsDigitSolved(digit) {
 			fmt.Printf("%d: %d remaining\n", digit, p.unsolvedCounts[digit])
 		} else {
@@ -87,7 +87,7 @@ func (c *Cell) printCandidates(candidateRow int) {
 			// Add a space between candidates.
 			fmt.Print(" ")
 		}
-		candidate := int8(candidateBase + col)
+		candidate := candidateBase + col
 		if c.HasCandidate(candidate) {
 			fmt.Print(color.HiBlackString("%d", candidate))
 		} else {

@@ -36,7 +36,7 @@ func (p *Puzzle) processRow(row int, line string) {
 	for col := range 9 {
 		val := line[col] - 48
 		if val >= 1 && val <= 9 {
-			p.GivenValue(row, col, int8(val))
+			p.GivenValue(row, col, int(val))
 		}
 	}
 }

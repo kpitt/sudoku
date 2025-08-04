@@ -38,16 +38,16 @@ func (p *Puzzle) IsSolved() bool {
 	return p.unsolvedCounts[0] == 0
 }
 
-func (p *Puzzle) IsDigitSolved(digit int8) bool {
+func (p *Puzzle) IsDigitSolved(digit int) bool {
 	return p.unsolvedCounts[digit] == 0
 }
 
-func (p *Puzzle) GivenValue(r, c int, val int8) {
+func (p *Puzzle) GivenValue(r, c int, val int) {
 	p.Grid[r][c].GivenValue(val)
 	p.updateUnsolvedCounts(r, c, val)
 }
 
-func (p *Puzzle) PlaceValue(r, c int, val int8) bool {
+func (p *Puzzle) PlaceValue(r, c int, val int) bool {
 	cell := p.Grid[r][c]
 	if cell.IsSolved() {
 		if cell.Value() != val {
@@ -62,7 +62,7 @@ func (p *Puzzle) PlaceValue(r, c int, val int8) bool {
 	return true
 }
 
-func (p *Puzzle) updateUnsolvedCounts(r, c int, val int8) {
+func (p *Puzzle) updateUnsolvedCounts(r, c int, val int) {
 	p.unsolvedCounts[0] = p.unsolvedCounts[0] - 1
 	p.unsolvedCounts[val] = p.unsolvedCounts[val] - 1
 	if p.unsolvedCounts[val] < 0 {
