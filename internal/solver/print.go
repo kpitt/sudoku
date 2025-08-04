@@ -11,14 +11,14 @@ func printProgress(format string, a ...any) {
 	color.Yellow(format, a...)
 }
 
-func printChecking(pattern string) {
-	printProgress("Checking %q pattern", pattern)
+func printChecking(name string) {
+	printProgress("Trying %q technique", name)
 }
 
-func printFound(pattern string, r, c int, val int8) {
-	fmt.Fprintf(os.Stderr, "%s: (%d,%d) = %d\n", pattern, r+1, c+1, val)
+func printFound(name string, r, c int, val int8) {
+	fmt.Fprintf(os.Stderr, "%s: (%d,%d) = %d\n", name, r+1, c+1, val)
 }
 
-func printEliminate(pattern string, r, c int, val int8) {
-	fmt.Fprintf(os.Stderr, "%s: eliminate %d at (%d,%d)\n", pattern, val, r+1, c+1)
+func printEliminate(name string, r, c int, val int8) {
+	fmt.Fprintf(os.Stderr, "%s: eliminate %d at (%d,%d)\n", name, val, r+1, c+1)
 }

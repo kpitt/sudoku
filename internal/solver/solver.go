@@ -9,12 +9,11 @@ import (
 )
 
 type Solver struct {
-	board *puzzle.Board
+	puzzle *puzzle.Puzzle
 
-	// Map values to possible locations for each group of 9 digits.
-	rowGroups   []*Group
-	colGroups   []*Group
-	houseGroups []*Group
+	rows    []*House
+	columns []*House
+	boxes   []*House
 }
 
 type (
@@ -22,23 +21,23 @@ type (
 	ValSet = *set.Set[int8]
 )
 
-func NewSolver(b *puzzle.Board) *Solver {
-	s := &Solver{board: b}
+func NewSolver(p *puzzle.Puzzle) *Solver {
+	s := &Solver{puzzle: p}
 
 	for i := range 9 {
-		s.rowGroups = append(s.rowGroups, NewGroup("Row", i))
-		s.colGroups = append(s.colGroups, NewGroup("Column", i))
-		s.houseGroups = append(s.houseGroups, NewGroup("House", i))
+		s.rows = append(s.rows, NewHouse("Row", i))
+		s.columns = append(s.columns, NewHouse("Column", i))
+		s.boxes = append(s.boxes, NewHouse("Box", i))
 	}
 
-	// Collect the cells that belong to each group.
+	// Collect the cells that belong to each house.
 	for r := range 9 {
 		for c := range 9 {
-			cell := b.Cells[r][c]
-			s.rowGroups[r].Cells[c] = cell
-			s.colGroups[c].Cells[r] = cell
-			house, hr, hc := cell.HouseCoordinates()
-			s.houseGroups[house].Cells[hr*3+hc] = cell
+			cell := p.Grid[r][c]
+			s.rows[r].Cells[c] = cell
+			s.columns[c].Cells[r] = cell
+			box, index := cell.BoxCoordinates()
+			s.boxes[box].Cells[index] = cell
 		}
 	}
 
@@ -48,46 +47,48 @@ func NewSolver(b *puzzle.Board) *Solver {
 }
 
 func (s *Solver) initializeCandidates() {
-	printProgress("Processing initial board state")
-	b := s.board
+	printProgress("Processing given values")
+	b := s.puzzle
 	for r := range 9 {
 		for c := range 9 {
-			cell := b.Cells[r][c]
-			if cell.IsFixed {
-				s.eliminateCandidates(r, c, cell.LockedValue())
+			cell := b.Grid[r][c]
+			if cell.IsGiven {
+				s.eliminateCandidates(r, c, cell.Value())
 			}
 		}
 	}
 }
 
-// Solve attempts to solve a Sudoku puzzle by repeatedly applying known solving
-// patterns to find solved cells and eliminate candidate values until the puzzle
-// is completely solved, or until no more candidates can be eliminated (partial
-// solution).
+// Solve attempts to solve a Sudoku puzzle by repeatedly applying known deductive
+// solving techniques to find solved cells and eliminate candidate values until
+// the puzzle is completely solved, or until no more candidates can be eliminated
+// (partial solution).
 func (s *Solver) Solve() {
 	defer solveTimer(time.Now())
 
-	b := s.board
+	b := s.puzzle
 
 	var pass int
 	for !b.IsSolved() {
 		pass = pass + 1
 		color.HiYellow("Solver Pass %d:", pass)
 
-		// "Naked Single" and "Hidden Single" are the only patterns that detect
-		// an exact solution for a given cell.  The "Naked Single" pattern is
-		// checked each time a candidate is removed from a cell, so we only
-		// need to look for the "Hidden Single" pattern here.
+		// "Naked Single" and "Hidden Single" are the only techniques that
+		// provide an exact solution for a given cell.  The Naked Single
+		// technique is applied each time a candidate is removed from a cell,
+		// so we only need to look for Hidden Singles here.
 
 		if s.findHiddenSingles() {
 			continue
 		}
 
-		// The remaining patterns are used to eliminate candidate values.
-		// Patterns are processed in increasing order of how complex the pattern
-		// is to detect.  If a pattern eliminates at least one candidate, then
-		// we go back check the simplest patterns again.  Otherwise, we move on
-		// to the next pattern.
+		// The remaining techniques are used to eliminate candidate values until
+		// a Naked or Hidden Single is reached.  Techniques are checked in
+		// roughly the order that a human solver would apply them, starting
+		// with the simplest techniques and moving to more complex ones.  If a
+		// technique eliminates at least one candidate, then we start again with
+		// the simplest checks.  Otherwise, we move on to try the next
+		// technique.
 
 		if s.findNakedPairs() {
 			continue
@@ -113,7 +114,7 @@ func (s *Solver) Solve() {
 		if s.findNakedQuadruples() {
 			continue
 		}
-		if s.findYWings() {
+		if s.findXYWings() {
 			continue
 		}
 		if s.findAvoidableRectangles() {
@@ -136,9 +137,9 @@ func (s *Solver) Solve() {
 			continue
 		}
 
-		// If we were unable to find any of the known patterns, then we've
-		// eliminated as many candidates as we can.  All we can do now is break
-		// out of the solver loop with a partial solution.
+		// If none of the known techniques allow us to eliminate any additional
+		// candidates, then we've solved as much of the puzzle as we can, so
+		// all we can do is exit with a partial solution.
 		break
 	}
 	color.HiYellow("Total Solver Passes: %d", pass)
@@ -149,36 +150,36 @@ func solveTimer(start time.Time) {
 	color.HiYellow("Total Solver Time:   %v", elapsed)
 }
 
-func (s *Solver) LockValue(r, c int, val int8, pattern string) {
-	if s.board.LockValue(r, c, val) {
-		printFound(pattern, r, c, val)
+func (s *Solver) PlaceValue(r, c int, val int8, technique string) {
+	if s.puzzle.PlaceValue(r, c, val) {
+		printFound(technique, r, c, val)
 		s.eliminateCandidates(r, c, val)
 	}
 }
 
 // eliminateCandidates removes val as a candidate value for row r, column c, and
-// the house containing cell (r,c), and also removes cell (r,c) as a possible
-// location for any other values in that row, column, and house.
+// the box containing cell (r,c).  It also removes cell (r,c) as a possible
+// location for any other values in the same row, column, or box.
 func (s *Solver) eliminateCandidates(r, c int, val int8) {
-	// Remove value from the cached candidates for the row, column, and house
-	// of cell (r,c).
-	s.rowGroups[r].RemoveCandidateValue(val, c)
-	s.colGroups[c].RemoveCandidateValue(val, r)
-	house, houseCell, rowBase, colBase := getHouseInfo(r, c)
-	s.houseGroups[house].RemoveCandidateValue(val, houseCell)
+	// Remove value from the cached candidates for the row, column, and box of
+	// cell (r,c).
+	s.rows[r].RemoveCandidateValue(val, c)
+	s.columns[c].RemoveCandidateValue(val, r)
+	box, boxCell, rowBase, colBase := getBoxInfo(r, c)
+	s.boxes[box].RemoveCandidateValue(val, boxCell)
 
 	for i := range 9 {
 		s.removeCellCandidate(r, i, val) // remove candidate from row r
 		s.removeCellCandidate(i, c, val) // remove candidate from column c
-		// remove candidate from the house of (r,c)
+		// remove candidate from the box that contains (r,c)
 		s.removeCellCandidate(rowBase+i/3, colBase+i%3, val)
 	}
 }
 
 func (s *Solver) removeCellCandidate(r, c int, val int8) {
-	b := s.board
-	cell := b.Cells[r][c]
-	if cell.IsLocked() || !cell.HasCandidate(val) {
+	b := s.puzzle
+	cell := b.Grid[r][c]
+	if cell.IsSolved() || !cell.HasCandidate(val) {
 		return
 	}
 
@@ -186,24 +187,24 @@ func (s *Solver) removeCellCandidate(r, c int, val int8) {
 	cell.RemoveCandidate(val)
 
 	// Also remove this cell from the cached locations for value.
-	s.rowGroups[r].RemoveCandidateCell(val, c)
-	s.colGroups[c].RemoveCandidateCell(val, r)
-	house, houseCell, _, _ := getHouseInfo(r, c)
-	s.houseGroups[house].RemoveCandidateCell(val, houseCell)
+	s.rows[r].RemoveCandidateCell(val, c)
+	s.columns[c].RemoveCandidateCell(val, r)
+	box, boxCell := cell.BoxCoordinates()
+	s.boxes[box].RemoveCandidateCell(val, boxCell)
 
 	// A "Naked Single" is a cell that has only one possible value.
 	// Checking for a "Naked Single" each time a candidate is removed narrows
 	// down the possible options more quickly, and doesn't require iterating
-	// over the entire board at the start of each solver pass.
+	// over the entire puzzle grid at the start of each solver pass.
 	if cell.NumCandidates() == 1 {
-		s.LockValue(r, c, cell.CandidateValues()[0], "Naked Single")
+		s.PlaceValue(r, c, cell.CandidateValues()[0], "Naked Single")
 	}
 }
 
-func getHouseInfo(row, col int) (houseIndex, cellIndex, baseRow, baseCol int) {
-	houseRow, houseCol := row/3, col/3
-	houseIndex = houseRow*3 + houseCol
-	baseRow, baseCol = houseRow*3, houseCol*3
-	cellIndex = (row-baseRow)*3 + (col - baseCol)
-	return houseIndex, cellIndex, baseRow, baseCol
+func getBoxInfo(r, c int) (box, cellIndex, baseRow, baseCol int) {
+	boxRow, boxCol := r/3, c/3
+	box = boxRow*3 + boxCol
+	baseRow, baseCol = boxRow*3, boxCol*3
+	cellIndex = (r%3)*3 + c%3
+	return box, cellIndex, baseRow, baseCol
 }

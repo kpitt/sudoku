@@ -4,67 +4,68 @@ import (
 	"fmt"
 )
 
-type Board struct {
-	Cells [9][9]*Cell
+type Puzzle struct {
+	Grid [9][9]*Cell
 
 	// Holds counts of how many of each digit still needs to be placed.  If the
 	// count for a digit reaches 0, then that digit is completely solved.
-	// Index 0 holds the total count of unsolved cells on the board.  When this
-	// value reaches 0, the puzzle is completely solved.
+	// Index 0 holds the total count of unsolved grid cells.  When this value
+	// reaches 0, the puzzle is completely solved.
 	unsolvedCounts [10]int
 }
 
-func NewBoard() *Board {
-	b := &Board{}
+func NewPuzzle() *Puzzle {
+	p := &Puzzle{}
 	for r := range 9 {
 		for c := range 9 {
-			b.Cells[r][c] = NewCell(r, c)
+			p.Grid[r][c] = NewCell(r, c)
 		}
 	}
 
 	for digit := range 10 {
 		if digit == 0 {
 			// Digit 0 represents the total count of unsolved cells.
-			b.unsolvedCounts[digit] = 9 * 9
+			p.unsolvedCounts[digit] = 9 * 9
 		} else {
-			b.unsolvedCounts[digit] = 9
+			p.unsolvedCounts[digit] = 9
 		}
 	}
 
-	return b
+	return p
 }
 
-func (b *Board) IsSolved() bool {
-	return b.unsolvedCounts[0] == 0
+func (p *Puzzle) IsSolved() bool {
+	return p.unsolvedCounts[0] == 0
 }
 
-func (b *Board) IsDigitSolved(digit int8) bool {
-	return b.unsolvedCounts[digit] == 0
+func (p *Puzzle) IsDigitSolved(digit int8) bool {
+	return p.unsolvedCounts[digit] == 0
 }
 
-func (b *Board) setFixedValue(r, c int, val int8) {
-	b.Cells[r][c].setFixedValue(val)
-	b.updateUnsolvedCounts(r, c, val)
+func (p *Puzzle) GivenValue(r, c int, val int8) {
+	p.Grid[r][c].GivenValue(val)
+	p.updateUnsolvedCounts(r, c, val)
 }
 
-func (b *Board) LockValue(r, c int, val int8) bool {
-	cell := b.Cells[r][c]
-	if cell.IsLocked() {
-		if cell.LockedValue() != val {
-			boardStateError(fmt.Sprintf("conflicting locked values at (%d,%d)", r, c))
+func (p *Puzzle) PlaceValue(r, c int, val int8) bool {
+	cell := p.Grid[r][c]
+	if cell.IsSolved() {
+		if cell.Value() != val {
+			puzzleStateError(fmt.Sprintf("conflicting cell values %d and %d at (%d,%d)",
+				cell.Value(), val, r+1, c+1))
 		}
 		return false
 	}
 
-	cell.LockValue(val)
-	b.updateUnsolvedCounts(r, c, val)
+	cell.PlaceValue(val)
+	p.updateUnsolvedCounts(r, c, val)
 	return true
 }
 
-func (b *Board) updateUnsolvedCounts(r, c int, val int8) {
-	b.unsolvedCounts[0] = b.unsolvedCounts[0] - 1
-	b.unsolvedCounts[val] = b.unsolvedCounts[val] - 1
-	if b.unsolvedCounts[val] < 0 {
-		boardStateError(fmt.Sprintf("too many instances of digit %d when locking cell (%d,%d)", val, r, c))
+func (p *Puzzle) updateUnsolvedCounts(r, c int, val int8) {
+	p.unsolvedCounts[0] = p.unsolvedCounts[0] - 1
+	p.unsolvedCounts[val] = p.unsolvedCounts[val] - 1
+	if p.unsolvedCounts[val] < 0 {
+		puzzleStateError(fmt.Sprintf("too many instances of digit %d when placing cell (%d,%d)", val, r, c))
 	}
 }
