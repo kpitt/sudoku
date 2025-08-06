@@ -205,6 +205,13 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 	}
 }
 
+func (s *Solver) applyStepCandidates(ss *SolutionStep) {
+	// Apply the candidates eliminated by this step.
+	for _, c := range ss.deletedCandidates {
+		s.removeCellCandidate(c.Row, c.Col, c.Value)
+	}
+}
+
 func getBoxInfo(r, c int) (box, cellIndex, baseRow, baseCol int) {
 	boxRow, boxCol := r/3, c/3
 	box = boxRow*3 + boxCol
