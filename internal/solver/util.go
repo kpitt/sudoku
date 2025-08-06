@@ -63,3 +63,7 @@ func sameCandidates(a, b *puzzle.Cell) bool {
 	values := set.Union(a.Candidates, b.Candidates)
 	return values.Size() == sizeA
 }
+
+func rowColFromIndex(index int) (row, col int) {
+	return index / 9, index % 9
+}
