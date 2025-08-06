@@ -28,10 +28,8 @@ import (
 func (s *Solver) findHiddenSingles() bool {
 	printChecking("Hidden Single")
 	found := false
-	for i := range 9 {
-		found = s.checkHiddenSinglesForHouse(s.rows[i]) || found
-		found = s.checkHiddenSinglesForHouse(s.columns[i]) || found
-		found = s.checkHiddenSinglesForHouse(s.boxes[i]) || found
+	for _, h := range s.houses {
+		found = s.checkHiddenSinglesForHouse(h) || found
 	}
 	return found
 }
@@ -49,18 +47,18 @@ func (s *Solver) checkHiddenSinglesForHouse(h *House) bool {
 	return false
 }
 
-func (s *Solver) findNakedPairs() bool {
+func (s *Solver) findNakedPairs() (step *SolutionStep, found bool) {
 	printChecking("Naked Pair")
-	found := false
-	for i := range 9 {
-		found = s.checkNakedPairsForHouse(s.rows[i]) || found
-		found = s.checkNakedPairsForHouse(s.columns[i]) || found
-		found = s.checkNakedPairsForHouse(s.boxes[i]) || found
+	for _, h := range s.houses {
+		if step, found = s.checkNakedPairsForHouse(h); found {
+			return step, true
+		}
 	}
-	return found
+
+	return nil, false
 }
 
-func (s *Solver) checkNakedPairsForHouse(h *House) bool {
+func (s *Solver) checkNakedPairsForHouse(h *House) (step *SolutionStep, found bool) {
 	values := make(LocValMap)
 	for i, c := range h.Cells {
 		// Collect a map of all locations with exactly 2 candidate values.
@@ -70,7 +68,7 @@ func (s *Solver) checkNakedPairsForHouse(h *House) bool {
 	}
 	if len(values) < 2 {
 		// We need at least 2 candidate values to have a pair.
-		return false
+		return nil, false
 	}
 
 	locs := mapKeys(values)
@@ -85,22 +83,20 @@ func (s *Solver) checkNakedPairsForHouse(h *House) bool {
 			}
 
 			locSet := set.NewSet(a, b)
-			ss := NewSolutionStep(fmt.Sprintf("Naked Pair (%s)", h.Type))
-			if s.eliminateFromOtherLocs(h, valueSet, locSet, ss) {
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+			step = NewSolutionStep(fmt.Sprintf("Naked Pair (%s)", h.Type))
+			if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 // eliminateFromOtherLocs removes the candidates listed in values from all
 // cells that are not listed in locs.
 func (s *Solver) eliminateFromOtherLocs(
-	h *House, values ValSet, locs LocSet, ss *SolutionStep,
+	h *House, values ValSet, locs LocSet, step *SolutionStep,
 ) bool {
 	found := false
 	for l := range 9 {
@@ -110,7 +106,7 @@ func (s *Solver) eliminateFromOtherLocs(
 		c := h.Cells[l]
 		for _, v := range values.Values() {
 			if c.HasCandidate(v) {
-				ss.deleteCandidate(c.Row, c.Col, v)
+				step.deleteCandidate(c.Row, c.Col, v)
 				found = true
 			}
 		}
@@ -123,28 +119,31 @@ func (s *Solver) eliminateFromOtherLocs(
 // cells from each house in houses whose index is not listed in locs.  Returns
 // true if at least one candidate was eliminated.
 func (s *Solver) eliminateFromOtherLocsMulti(
-	houses []*House, values ValSet, locs LocSet, ss *SolutionStep,
+	houses []*House, values ValSet, locs LocSet, step *SolutionStep,
 ) bool {
 	updated := false
 	for _, g := range houses {
-		updated = s.eliminateFromOtherLocs(g, values, locs, ss) || updated
+		updated = s.eliminateFromOtherLocs(g, values, locs, step) || updated
 	}
 
 	return updated
 }
 
-func (s *Solver) findLockedCandidates() bool {
+func (s *Solver) findLockedCandidates() (step *SolutionStep, found bool) {
 	printChecking("Locked Candidate")
-	found := false
 	for i := range 9 {
 		// We only need to check rows and columns for Locked Candidates.
-		found = s.checkLockedCandidatesForLine(s.rows[i]) || found
-		found = s.checkLockedCandidatesForLine(s.columns[i]) || found
+		if step, found = s.checkLockedCandidatesForLine(s.rows[i]); found {
+			return step, true
+		}
+		if step, found = s.checkLockedCandidatesForLine(s.columns[i]); found {
+			return step, true
+		}
 	}
-	return found
+	return nil, false
 }
 
-func (s *Solver) checkLockedCandidatesForLine(line *House) bool {
+func (s *Solver) checkLockedCandidatesForLine(line *House) (step *SolutionStep, found bool) {
 	candidates := filterMap(line.Unsolved, func(_ int, l LocSet) bool {
 		// If we have more than 3 candidates in a line, then they can't all be
 		// in the same box.
@@ -160,29 +159,28 @@ func (s *Solver) checkLockedCandidatesForLine(line *House) bool {
 				return index
 			})
 			locSet := set.NewSet(boxCells...)
-			ss := NewSolutionStep(fmt.Sprintf("Locked Candidate (%s)", line.Type))
-			if s.eliminateFromOtherLocs(s.boxes[box], valueSet, locSet, ss) {
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+			step = NewSolutionStep(fmt.Sprintf("Locked Candidate (%s)", line.Type))
+			if s.eliminateFromOtherLocs(s.boxes[box], valueSet, locSet, step) {
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findPointingTuples() bool {
+func (s *Solver) findPointingTuples() (step *SolutionStep, found bool) {
 	printChecking("Pointing Tuple")
-	found := false
 	for i := range 9 {
 		// We only need to check boxes for Pointing Tuples.
-		found = s.checkPointingTuplesForBox(s.boxes[i]) || found
+		if step, found = s.checkPointingTuplesForBox(s.boxes[i]); found {
+			return step, true
+		}
 	}
-	return found
+	return nil, false
 }
 
-func (s *Solver) checkPointingTuplesForBox(box *House) bool {
+func (s *Solver) checkPointingTuplesForBox(box *House) (step *SolutionStep, found bool) {
 	candidates := filterMap(box.Unsolved, func(_ int, l LocSet) bool {
 		// If we have more than 3 candidates in a single box, then they can't all
 		// be in the same line.
@@ -197,11 +195,9 @@ func (s *Solver) checkPointingTuplesForBox(box *House) bool {
 				return c.Col
 			})
 			locSet := set.NewSet(cols...)
-			ss := NewSolutionStep("Pointing Tuple (Row)")
-			if s.eliminateFromOtherLocs(s.rows[row], valueSet, locSet, ss) {
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+			step = NewSolutionStep("Pointing Tuple (Row)")
+			if s.eliminateFromOtherLocs(s.rows[row], valueSet, locSet, step) {
+				return step, true
 			}
 		}
 		if col, ok := box.sharedCol(locs); ok {
@@ -209,36 +205,34 @@ func (s *Solver) checkPointingTuplesForBox(box *House) bool {
 				return c.Row
 			})
 			locSet := set.NewSet(rows...)
-			ss := NewSolutionStep("Pointing Tuple (Column)")
-			if s.eliminateFromOtherLocs(s.columns[col], valueSet, locSet, ss) {
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+			step = NewSolutionStep("Pointing Tuple (Column)")
+			if s.eliminateFromOtherLocs(s.columns[col], valueSet, locSet, step) {
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findHiddenPairs() bool {
+func (s *Solver) findHiddenPairs() (step *SolutionStep, found bool) {
 	printChecking("Hidden Pair")
-	found := false
-	for i := range 9 {
-		found = s.checkHiddenPairsForHouse(s.rows[i]) || found
-		found = s.checkHiddenPairsForHouse(s.columns[i]) || found
-		found = s.checkHiddenPairsForHouse(s.boxes[i]) || found
+	for _, h := range s.houses {
+		if step, found = s.checkHiddenPairsForHouse(h); found {
+			return step, true
+		}
 	}
-	return found
+
+	return nil, false
 }
 
-func (s *Solver) checkHiddenPairsForHouse(h *House) bool {
+func (s *Solver) checkHiddenPairsForHouse(h *House) (step *SolutionStep, found bool) {
 	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
 		return l.Size() == 2
 	})
 	if len(locs) < 2 {
 		// We need at least 2 candidate values to have a pair.
-		return false
+		return nil, false
 	}
 
 	values := mapKeys(locs)
@@ -253,29 +247,27 @@ func (s *Solver) checkHiddenPairsForHouse(h *House) bool {
 			}
 
 			valueSet := set.NewSet(x, y)
-			ss := NewSolutionStep(fmt.Sprintf("Hidden Pair (%s)", h.Type))
-			if s.eliminateOtherValues(h, valueSet, locSet, ss) {
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+			step = NewSolutionStep(fmt.Sprintf("Hidden Pair (%s)", h.Type))
+			if s.eliminateOtherValues(h, valueSet, locSet, step) {
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 // eliminateOtherValues removes candidates that are not listed in values from
 // the cells in locs.
 func (s *Solver) eliminateOtherValues(
-	h *House, values ValSet, locs LocSet, ss *SolutionStep,
+	h *House, values ValSet, locs LocSet, step *SolutionStep,
 ) bool {
 	found := false
 	for _, l := range locs.Values() {
 		c := h.Cells[l]
 		for _, v := range c.CandidateValues() {
 			if !values.Contains(v) {
-				ss.deleteCandidate(c.Row, c.Col, v)
+				step.deleteCandidate(c.Row, c.Col, v)
 				found = true
 			}
 		}
@@ -284,18 +276,18 @@ func (s *Solver) eliminateOtherValues(
 	return found
 }
 
-func (s *Solver) findNakedTriples() bool {
+func (s *Solver) findNakedTriples() (step *SolutionStep, found bool) {
 	printChecking("Naked Triple")
-	found := false
-	for i := range 9 {
-		found = s.checkNakedTriplesForHouse(s.rows[i]) || found
-		found = s.checkNakedTriplesForHouse(s.columns[i]) || found
-		found = s.checkNakedTriplesForHouse(s.boxes[i]) || found
+	for _, h := range s.houses {
+		if step, found = s.checkNakedTriplesForHouse(h); found {
+			return step, true
+		}
 	}
-	return found
+
+	return nil, false
 }
 
-func (s *Solver) checkNakedTriplesForHouse(h *House) bool {
+func (s *Solver) checkNakedTriplesForHouse(h *House) (step *SolutionStep, found bool) {
 	values := make(LocValMap)
 	for i, c := range h.Cells {
 		// Collect a map of all locations with either 2 or 3 candidate values.
@@ -305,7 +297,7 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) bool {
 	}
 	if len(values) < 3 {
 		// We need at least 3 candidate values to have a triple.
-		return false
+		return nil, false
 	}
 
 	locs := mapKeys(values)
@@ -321,27 +313,29 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) bool {
 				}
 
 				locSet := set.NewSet(a, b, c)
-				ss := NewSolutionStep(fmt.Sprintf("Naked Triple (%s)", h.Type))
-				if s.eliminateFromOtherLocs(h, valueSet, locSet, ss) {
-					printStep(ss)
-					s.applyStepCandidates(ss)
-					return true
+				step = NewSolutionStep(fmt.Sprintf("Naked Triple (%s)", h.Type))
+				if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
+					return step, true
 				}
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findXWings() bool {
+func (s *Solver) findXWings() (step *SolutionStep, found bool) {
 	printChecking("X-Wing")
-	found := s.findXWingsInLines(s.rows, s.columns)
-	found = s.findXWingsInLines(s.columns, s.rows) || found
-	return found
+	if step, found = s.findXWingsInLines(s.rows, s.columns); found {
+		return step, true
+	}
+	if step, found = s.findXWingsInLines(s.columns, s.rows); found {
+		return step, true
+	}
+	return nil, false
 }
 
-func (s *Solver) findXWingsInLines(baseLines, coverLines []*House) bool {
+func (s *Solver) findXWingsInLines(baseLines, coverLines []*House) (step *SolutionStep, found bool) {
 	for i, b1 := range baseLines[:8] {
 		for x, b1Locs := range b1.Unsolved {
 			if b1Locs.Size() != 2 {
@@ -371,39 +365,35 @@ func (s *Solver) findXWingsInLines(baseLines, coverLines []*House) bool {
 				covers := transformSlice(baseLocs.Values(), func(y int) *House {
 					return coverLines[y]
 				})
-				ss := NewSolutionStep("X-Wing")
-				if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, ss) {
-					printStep(ss)
-					s.applyStepCandidates(ss)
-					return true
+				step = NewSolutionStep("X-Wing")
+				if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
+					return step, true
 				}
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findHiddenTriples() bool {
+func (s *Solver) findHiddenTriples() (step *SolutionStep, found bool) {
 	printChecking("Hidden Triple")
-	for i := range 9 {
-		if s.checkHiddenTriplesForHouse(s.rows[i]) ||
-			s.checkHiddenTriplesForHouse(s.columns[i]) ||
-			s.checkHiddenTriplesForHouse(s.boxes[i]) {
-
-			return true
+	for _, h := range s.houses {
+		if step, found = s.checkHiddenTriplesForHouse(h); found {
+			return step, true
 		}
 	}
-	return false
+
+	return nil, false
 }
 
-func (s *Solver) checkHiddenTriplesForHouse(h *House) bool {
+func (s *Solver) checkHiddenTriplesForHouse(h *House) (step *SolutionStep, found bool) {
 	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3
 	})
 	if len(locs) < 3 {
 		// We need at least 3 candidate values to have a triple.
-		return false
+		return nil, false
 	}
 
 	values := mapKeys(locs)
@@ -419,31 +409,29 @@ func (s *Solver) checkHiddenTriplesForHouse(h *House) bool {
 				}
 
 				valueSet := set.NewSet(x, y, z)
-				ss := NewSolutionStep(fmt.Sprintf("Hidden Triple (%s)", h.Type))
-				if s.eliminateOtherValues(h, valueSet, locSet, ss) {
-					printStep(ss)
-					s.applyStepCandidates(ss)
-					return true
+				step = NewSolutionStep(fmt.Sprintf("Hidden Triple (%s)", h.Type))
+				if s.eliminateOtherValues(h, valueSet, locSet, step) {
+					return step, true
 				}
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findNakedQuadruples() bool {
+func (s *Solver) findNakedQuadruples() (step *SolutionStep, found bool) {
 	printChecking("Naked Quadruple")
-	found := false
-	for i := range 9 {
-		found = s.checkNakedQuadruplesForHouse(s.rows[i]) || found
-		found = s.checkNakedQuadruplesForHouse(s.columns[i]) || found
-		found = s.checkNakedQuadruplesForHouse(s.boxes[i]) || found
+	for _, h := range s.houses {
+		if step, found = s.checkNakedQuadruplesForHouse(h); found {
+			return step, true
+		}
 	}
-	return found
+
+	return nil, false
 }
 
-func (s *Solver) checkNakedQuadruplesForHouse(h *House) bool {
+func (s *Solver) checkNakedQuadruplesForHouse(h *House) (step *SolutionStep, found bool) {
 	values := make(LocValMap)
 	for i, c := range h.Cells {
 		// Collect a map of all locations with either 2, 3 or 4 candidate values.
@@ -453,7 +441,7 @@ func (s *Solver) checkNakedQuadruplesForHouse(h *House) bool {
 	}
 	if len(values) < 4 {
 		// We need at least 4 candidate values to have a quadruple.
-		return false
+		return nil, false
 	}
 
 	locs := mapKeys(values)
@@ -470,21 +458,19 @@ func (s *Solver) checkNakedQuadruplesForHouse(h *House) bool {
 					}
 
 					locSet := set.NewSet(a, b, c, d)
-					ss := NewSolutionStep(fmt.Sprintf("Naked Quadruple (%s)", h.Type))
-					if s.eliminateFromOtherLocs(h, valueSet, locSet, ss) {
-						printStep(ss)
-						s.applyStepCandidates(ss)
-						return true
+					step = NewSolutionStep(fmt.Sprintf("Naked Quadruple (%s)", h.Type))
+					if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
+						return step, true
 					}
 				}
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findXYWings() bool {
+func (s *Solver) findXYWings() (step *SolutionStep, found bool) {
 	printChecking("XY-Wing")
 	// Collect a list of all cells with exactly 2 candidates.
 	p := s.puzzle
@@ -499,22 +485,22 @@ func (s *Solver) findXYWings() bool {
 	if len(candidates) < 3 {
 		// An XY-Wing requires a pivot cell and 2 pincer cells, so we need at
 		// least 3 candidates.
-		return false
+		return nil, false
 	}
 
 	// Try each candidate as the pivot cell, checking it against all of the other
 	// candidates.
 	for _, pivot := range candidates {
-		if s.checkXYWingsForPivot(pivot, candidates) {
-			return true
+		if step, found = s.checkXYWingsForPivot(pivot, candidates); found {
+			return step, true
 		}
 	}
-	return false
+	return nil, false
 }
 
 func (s *Solver) checkXYWingsForPivot(
 	pivot *puzzle.Cell, candidates []*puzzle.Cell,
-) bool {
+) (step *SolutionStep, found bool) {
 	// Get the x and y values.
 	values := pivot.CandidateValues()
 	x, y := values[0], values[1]
@@ -535,7 +521,7 @@ func (s *Solver) checkXYWingsForPivot(
 	}
 	if len(xCells) == 0 || len(yCells) == 0 {
 		// We need at least one candidate cell for each value to have an XY-Wing.
-		return false
+		return nil, false
 	}
 
 	// Check each of the x-cells against each of the y-cells to see if they share
@@ -552,16 +538,14 @@ func (s *Solver) checkXYWingsForPivot(
 			if !yc.HasCandidate(z) || seesCell(xc, yc) {
 				continue
 			}
-			ss := NewSolutionStep("XY-Wing")
-			if s.eliminateXYWingCells(z, xc, yc, ss) {
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+			step = NewSolutionStep("XY-Wing")
+			if s.eliminateXYWingCells(z, xc, yc, step) {
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 // eliminateYWingCells removes candidate value z from all cells that see both
@@ -592,9 +576,8 @@ func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell, ss *Solu
 	return found
 }
 
-func (s *Solver) findAvoidableRectangles() bool {
-	found := false
-	return found
+func (s *Solver) findAvoidableRectangles() (step *SolutionStep, found bool) {
+	return nil, false
 }
 
 // findXYZ searches for 3 cells that fit the "XYZ-Wing" pattern.  An XYZ-Wing
@@ -605,7 +588,7 @@ func (s *Solver) findAvoidableRectangles() bool {
 // any cell that sees all three.  Note that one pincer *MUST* be in the same
 // box as the pivot cell in order for it to be possible for any cell to see the
 // pivot and both pincers.
-func (s *Solver) findXYZWings() bool {
+func (s *Solver) findXYZWings() (step *SolutionStep, found bool) {
 	printChecking("XYZ-Wing")
 	// Collect a list of all cells with exactly 3 candidates.
 	p := s.puzzle
@@ -620,14 +603,14 @@ func (s *Solver) findXYZWings() bool {
 
 	// Check each candidate as a possible pivot cell for an XYZ-Wing.
 	for _, pivot := range candidates {
-		if s.checkXYZWingsForPivot(pivot) {
-			return true
+		if step, found = s.checkXYZWingsForPivot(pivot); found {
+			return step, true
 		}
 	}
-	return false
+	return nil, false
 }
 
-func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) bool {
+func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (step *SolutionStep, found bool) {
 	// Find cells in the same box as the pivot cell which have exactly 2
 	// candidates that both appear in the pivot cell.
 	box := s.boxes[pivot.Box()]
@@ -643,7 +626,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) bool {
 	}
 	if len(xzCells) == 0 {
 		// No valid candidates found.
-		return false
+		return nil, false
 	}
 
 	for _, xzCell := range xzCells {
@@ -674,29 +657,25 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) bool {
 			return true
 		}
 
-		ss := NewSolutionStep("XYZ-Wing")
+		step = NewSolutionStep("XYZ-Wing")
 		r, c := pivot.Row, pivot.Col
 		for _, rowCell := range s.rows[r].Cells {
 			if isYZCandidate(rowCell) &&
-				s.eliminateXYZWingCells(pivot, xzCell, rowCell, ss) {
+				s.eliminateXYZWingCells(pivot, xzCell, rowCell, step) {
 
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+				return step, true
 			}
 		}
 		for _, colCell := range s.columns[c].Cells {
 			if isYZCandidate(colCell) &&
-				s.eliminateXYZWingCells(pivot, xzCell, colCell, ss) {
+				s.eliminateXYZWingCells(pivot, xzCell, colCell, step) {
 
-				printStep(ss)
-				s.applyStepCandidates(ss)
-				return true
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 // eliminateXYZWingCells removes candidate value z from any cells that see all
@@ -736,24 +715,24 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ss 
 	return true
 }
 
-func (s *Solver) findHiddenQuadruples() bool {
+func (s *Solver) findHiddenQuadruples() (step *SolutionStep, found bool) {
 	printChecking("Hidden Quadruple")
-	found := false
-	for i := range 9 {
-		found = s.checkHiddenQuadruplesForHouse(s.rows[i]) || found
-		found = s.checkHiddenQuadruplesForHouse(s.columns[i]) || found
-		found = s.checkHiddenQuadruplesForHouse(s.boxes[i]) || found
+	for _, h := range s.houses {
+		if step, found = s.checkHiddenQuadruplesForHouse(h); found {
+			return step, true
+		}
 	}
-	return found
+
+	return nil, false
 }
 
-func (s *Solver) checkHiddenQuadruplesForHouse(h *House) bool {
+func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (step *SolutionStep, found bool) {
 	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3 || l.Size() == 4
 	})
 	if len(locs) < 4 {
 		// We need at least 4 candidate values to have a quadruple.
-		return false
+		return nil, false
 	}
 
 	values := mapKeys(locs)
@@ -770,42 +749,49 @@ func (s *Solver) checkHiddenQuadruplesForHouse(h *House) bool {
 					}
 
 					valueSet := set.NewSet(w, x, y, z)
-					ss := NewSolutionStep(fmt.Sprintf("Hidden Quadruple (%s)", h.Type))
-					if s.eliminateOtherValues(h, valueSet, locSet, ss) {
-						printStep(ss)
-						s.applyStepCandidates(ss)
-						return true
+					step = NewSolutionStep(fmt.Sprintf("Hidden Quadruple (%s)", h.Type))
+					if s.eliminateOtherValues(h, valueSet, locSet, step) {
+						return step, true
 					}
 				}
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findSwordfish() bool {
+func (s *Solver) findSwordfish() (step *SolutionStep, found bool) {
 	printChecking("Swordfish")
-	found := s.findSwordfishInLines(s.rows, s.columns)
-	found = s.findSwordfishInLines(s.columns, s.rows) || found
-	return found
+	if step, found = s.findSwordfishInLines(s.rows, s.columns); found {
+		return step, true
+	}
+	if step, found = s.findSwordfishInLines(s.columns, s.rows); found {
+		return step, true
+	}
+	return nil, false
 }
 
-func (s *Solver) findSwordfishInLines(baseLines, coverLines []*House) bool {
+func (s *Solver) findSwordfishInLines(baseLines, coverLines []*House) (step *SolutionStep, found bool) {
 	for _, base := range baseLines {
 		for val, locs := range base.Unsolved {
 			// A Swordfish needs at least one line with exactly 3 candidate
 			// locations for a value.
-			if locs.Size() == 3 && s.checkSwordfishForValue(val, base, baseLines, coverLines) {
-				return true
+			if locs.Size() != 3 {
+				continue
+			}
+			if step, found = s.checkSwordfishForValue(val, base, baseLines, coverLines); found {
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) checkSwordfishForValue(val int, base1 *House, baseLines, coverLines []*House) bool {
+func (s *Solver) checkSwordfishForValue(
+	val int, base1 *House, baseLines, coverLines []*House,
+) (step *SolutionStep, found bool) {
 	// Find all base lines other than base1 that have either 2 or 3 candidate
 	// locations for val.
 	candidates := filterSlice(baseLines, func(b2 *House) bool {
@@ -835,40 +821,47 @@ func (s *Solver) checkSwordfishForValue(val int, base1 *House, baseLines, coverL
 		covers := transformSlice(base1Locs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
-		ss := NewSolutionStep("Swordfish")
-		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, ss) {
-			printStep(ss)
-			s.applyStepCandidates(ss)
-			return true
+		step = NewSolutionStep("Swordfish")
+		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
+			return step, true
 		}
 		break
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findJellyfish() bool {
+func (s *Solver) findJellyfish() (step *SolutionStep, found bool) {
 	printChecking("Jellyfish")
-	found := s.findJellyfishInLines(s.rows, s.columns)
-	found = s.findJellyfishInLines(s.columns, s.rows) || found
-	return found
+	if step, found = s.findJellyfishInLines(s.rows, s.columns); found {
+		return step, true
+	}
+	if step, found = s.findJellyfishInLines(s.columns, s.rows); found {
+		return step, true
+	}
+	return nil, false
 }
 
-func (s *Solver) findJellyfishInLines(baseLines, coverLines []*House) bool {
+func (s *Solver) findJellyfishInLines(baseLines, coverLines []*House) (step *SolutionStep, found bool) {
 	for _, base := range baseLines {
 		for val, locs := range base.Unsolved {
 			// A Swordfish needs at least one line with exactly 4 candidate
 			// locations for a value.
-			if locs.Size() == 4 && s.checkJellyfishForValue(val, base, baseLines, coverLines) {
-				return true
+			if locs.Size() != 4 {
+				continue
+			}
+			if step, found = s.checkJellyfishForValue(val, base, baseLines, coverLines); found {
+				return step, true
 			}
 		}
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) checkJellyfishForValue(val int, base1 *House, baseLines, coverLines []*House) bool {
+func (s *Solver) checkJellyfishForValue(
+	val int, base1 *House, baseLines, coverLines []*House,
+) (step *SolutionStep, found bool) {
 	// Find all base lines other than base1 that have at least 2 but not more
 	// than 4 candidate locations for val.
 	candidates := filterSlice(baseLines, func(b2 *House) bool {
@@ -898,36 +891,37 @@ func (s *Solver) checkJellyfishForValue(val int, base1 *House, baseLines, coverL
 		covers := transformSlice(baseLocs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
-		ss := NewSolutionStep("Jellyfish")
-		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, ss) {
-			printStep(ss)
-			s.applyStepCandidates(ss)
-			return true
+		step = NewSolutionStep("Jellyfish")
+		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
+			return step, true
 		}
 		break
 	}
 
-	return false
+	return nil, false
 }
 
-func (s *Solver) findUniqueRectangles() bool {
+func (s *Solver) findUniqueRectangles() (step *SolutionStep, found bool) {
 	printChecking("Unique Rectangle")
-	found := false
 	b := s.puzzle
 	// Check each cell with exactly 2 candidate values to see if it is the base
 	// corner of a unique rectangle.
 	for r := range 9 {
 		for c := range 9 {
 			cell := b.Grid[r][c]
-			if cell.NumCandidates() == 2 && s.checkUniqueRectangleForCell(cell) {
-				return true
+			if cell.NumCandidates() != 2 {
+				continue
+			}
+			if step, found = s.checkUniqueRectangleForCell(cell); found {
+				return step, true
 			}
 		}
 	}
-	return found
+
+	return nil, false
 }
 
-func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) bool {
+func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) (step *SolutionStep, found bool) {
 	b := s.puzzle
 
 	// Look for a cell in the same row as base with the same pair of candidates.
@@ -942,7 +936,7 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) bool {
 		}
 	}
 	if rowWing == nil {
-		return false
+		return nil, false
 	}
 
 	// Look for a cell in the same column as base with the same pair of candidates.
@@ -957,7 +951,7 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) bool {
 		}
 	}
 	if colWing == nil {
-		return false
+		return nil, false
 	}
 
 	// The 2 wing cells must be in different boxes, but one of them must be in
@@ -968,27 +962,25 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) bool {
 		// These cells form a unique rectangle, so we can eliminate their candidates
 		// from the cell at the 4th corner of the rectangle, which will have the
 		// same row as the column-wing and the same column as the row-wing.
-		ss := NewSolutionStep("Unique Rectangle")
-		if s.eliminateValuesFromCell(colWing.Row, rowWing.Col, base.Candidates, ss) {
-			printStep(ss)
-			s.applyStepCandidates(ss)
-			return true
+		step = NewSolutionStep("Unique Rectangle")
+		if s.eliminateValuesFromCell(colWing.Row, rowWing.Col, base.Candidates, step) {
+			return step, true
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 // eliminateValuesFromCell removes all candidates listed in values from the cell
 // at (r,c).
 func (s *Solver) eliminateValuesFromCell(
-	r, c int, values ValSet, ss *SolutionStep,
+	r, c int, values ValSet, step *SolutionStep,
 ) bool {
 	cell := s.puzzle.Grid[r][c]
 	found := false
 	for _, v := range values.Values() {
 		if cell.HasCandidate(v) {
-			ss.deleteCandidate(r, c, v)
+			step.deleteCandidate(r, c, v)
 			found = true
 		}
 	}
