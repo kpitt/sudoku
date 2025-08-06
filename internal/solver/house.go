@@ -12,24 +12,44 @@ import (
 type House struct {
 	Unsolved ValLocMap
 	Cells    [9]*puzzle.Cell
-	Type     string
+	Kind     houseKind
 	Index    int
+}
+
+type houseKind int
+
+const (
+	kindRow houseKind = iota
+	kindColumn
+	kindBox
+)
+
+// houseKindNames is a list of display names for each house kind.
+// The order of the names must match the order of the houseKind constants.
+var houseKindNames = []string{
+	"Row",
+	"Column",
+	"Box",
 }
 
 type UnsolvedFilter = func(int, LocSet) bool
 
 var emptyLocations = set.NewSet[int]()
 
-func NewHouse(houseType string, index int) *House {
+func NewHouse(kind houseKind, index int) *House {
 	h := &House{
 		Unsolved: make(ValLocMap),
-		Type:     houseType,
+		Kind:     kind,
 		Index:    index,
 	}
 	for i := range 9 {
 		h.Unsolved[i+1] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
 	}
 	return h
+}
+
+func (h *House) Name() string {
+	return houseKindNames[h.Kind]
 }
 
 // RemoveCandidateCell removes cell from the candidate locations for value val.

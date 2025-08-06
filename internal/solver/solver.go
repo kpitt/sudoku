@@ -38,15 +38,15 @@ func NewSolver(p *puzzle.Puzzle) *Solver {
 	s := &Solver{puzzle: p}
 
 	for i := range 9 {
-		row := NewHouse("Row", i)
+		row := NewHouse(kindRow, i)
 		s.rows = append(s.rows, row)
 		s.lines = append(s.lines, row)
 		s.houses = append(s.houses, row)
-		col := NewHouse("Column", i)
+		col := NewHouse(kindColumn, i)
 		s.columns = append(s.columns, col)
 		s.lines = append(s.lines, col)
 		s.houses = append(s.houses, col)
-		box := NewHouse("Box", i)
+		box := NewHouse(kindBox, i)
 		s.boxes = append(s.boxes, box)
 		s.houses = append(s.houses, box)
 	}
@@ -133,8 +133,7 @@ SolverLoop:
 
 		for _, check := range checks {
 			if step, found := check(); found {
-				printStep(step)
-				s.applyStepCandidates(step)
+				s.applyStep(step)
 				continue SolverLoop
 			}
 		}
@@ -153,9 +152,8 @@ func solveTimer(start time.Time) {
 	color.HiYellow("Total Solver Time:   %v", elapsed)
 }
 
-func (s *Solver) PlaceValue(r, c int, val int, technique string) {
+func (s *Solver) PlaceValue(r, c int, val int) {
 	if s.puzzle.PlaceValue(r, c, val) {
-		printFound(technique, r, c, val)
 		s.eliminateCandidates(r, c, val)
 	}
 }
@@ -200,14 +198,25 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 	// down the possible options more quickly, and doesn't require iterating
 	// over the entire puzzle grid at the start of each solver pass.
 	if cell.NumCandidates() == 1 {
-		s.PlaceValue(r, c, cell.CandidateValues()[0], "Naked Single")
+		step := NewSolutionStep(kindNakedSingle).
+			WithPlacedValue(r, c, cell.CandidateValues()[0])
+		s.applyStep(step)
 	}
 }
 
-func (s *Solver) applyStepCandidates(ss *SolutionStep) {
-	// Apply the candidates eliminated by this step.
-	for _, c := range ss.deletedCandidates {
-		s.removeCellCandidate(c.Row, c.Col, c.Value)
+func (s *Solver) applyStep(step *SolutionStep) {
+	step.Print()
+	if step.IsSingle() {
+		// Place the value for this step in the puzzle grid.
+		index := step.indices[0]
+		r, c := rowColFromIndex(index)
+		s.PlaceValue(r, c, step.values[0])
+	} else {
+		// Apply the candidates eliminated by this step.
+		for _, dc := range step.deletedCandidates {
+			r, c := rowColFromIndex(dc.Index)
+			s.removeCellCandidate(r, c, dc.Value)
+		}
 	}
 }
 

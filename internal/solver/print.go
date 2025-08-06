@@ -11,18 +11,15 @@ func printProgress(format string, a ...any) {
 	color.Yellow(format, a...)
 }
 
-func printChecking(name string) {
-	printProgress("Trying %q technique", name)
+func printChecking(tk techniqueKind) {
+	printProgress("Trying %q technique", techniqueName(tk))
 }
 
-func printFound(name string, r, c int, val int) {
-	fmt.Fprintf(os.Stderr, "%s: %s=%d\n", name, formatCellRef(r, c), val)
+func (step *SolutionStep) Print() {
+	fmt.Fprintln(os.Stderr, step.Format())
 }
 
-func printStep(ss *SolutionStep) {
-	fmt.Fprintln(os.Stderr, ss.Format())
-}
-
-func formatCellRef(r, c int) string {
+func formatCellRef(index int) string {
+	r, c := rowColFromIndex(index)
 	return fmt.Sprintf("r%dc%d", r+1, c+1)
 }
