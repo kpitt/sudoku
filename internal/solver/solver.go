@@ -14,24 +14,41 @@ type Solver struct {
 	rows    []*House
 	columns []*House
 	boxes   []*House
+
+	// Many techniques need to be applied to all lines (rows and columns) or
+	// all houses.  We can simplify those checks by precalulating a list for
+	// each of those sets.
+	lines  []*House // all rows and columns
+	houses []*House // all rows, columns, and boxes
 }
 
+// Convenient type aliases that give semantic meaning to commonly used maps
+// and sets.
 type (
-	// Convenient type aliases that give semantic meaning to commonly used
-	// maps and sets.
 	LocSet    = *set.Set[int]
 	ValSet    = *set.Set[int]
 	LocValMap = map[int]ValSet
 	ValLocMap = map[int]LocSet
 )
 
+// Convenience alias for the signature of functions that check a technique.
+type CheckFunc = func() (step *SolutionStep, found bool)
+
 func NewSolver(p *puzzle.Puzzle) *Solver {
 	s := &Solver{puzzle: p}
 
 	for i := range 9 {
-		s.rows = append(s.rows, NewHouse("Row", i))
-		s.columns = append(s.columns, NewHouse("Column", i))
-		s.boxes = append(s.boxes, NewHouse("Box", i))
+		row := NewHouse("Row", i)
+		s.rows = append(s.rows, row)
+		s.lines = append(s.lines, row)
+		s.houses = append(s.houses, row)
+		col := NewHouse("Column", i)
+		s.columns = append(s.columns, col)
+		s.lines = append(s.lines, col)
+		s.houses = append(s.houses, col)
+		box := NewHouse("Box", i)
+		s.boxes = append(s.boxes, box)
+		s.houses = append(s.houses, box)
 	}
 
 	// Collect the cells that belong to each house.
@@ -72,7 +89,27 @@ func (s *Solver) Solve() {
 
 	b := s.puzzle
 
+	// List of known technique checks in the order they should be applied.
+	checks := []CheckFunc{
+		s.findNakedPairs,
+		s.findLockedCandidates,
+		s.findPointingTuples,
+		s.findHiddenPairs,
+		s.findNakedTriples,
+		s.findXWings,
+		s.findHiddenTriples,
+		s.findNakedQuadruples,
+		s.findXYWings,
+		s.findAvoidableRectangles,
+		s.findXYZWings,
+		s.findHiddenQuadruples,
+		s.findUniqueRectangles,
+		s.findSwordfish,
+		s.findJellyfish,
+	}
+
 	var pass int
+SolverLoop:
 	for !b.IsSolved() {
 		pass = pass + 1
 		color.HiYellow("Solver Pass %d:", pass)
@@ -94,51 +131,12 @@ func (s *Solver) Solve() {
 		// the simplest checks.  Otherwise, we move on to try the next
 		// technique.
 
-		if s.findNakedPairs() {
-			continue
-		}
-		if s.findLockedCandidates() {
-			continue
-		}
-		if s.findPointingTuples() {
-			continue
-		}
-		if s.findHiddenPairs() {
-			continue
-		}
-		if s.findNakedTriples() {
-			continue
-		}
-		if s.findXWings() {
-			continue
-		}
-		if s.findHiddenTriples() {
-			continue
-		}
-		if s.findNakedQuadruples() {
-			continue
-		}
-		if s.findXYWings() {
-			continue
-		}
-		if s.findAvoidableRectangles() {
-			continue
-		}
-		if s.findXYZWings() {
-			continue
-		}
-		if s.findHiddenQuadruples() {
-			continue
-		}
-		if s.findUniqueRectangles() {
-			continue
-		}
-		//...
-		if s.findSwordfish() {
-			continue
-		}
-		if s.findJellyfish() {
-			continue
+		for _, check := range checks {
+			if step, found := check(); found {
+				printStep(step)
+				s.applyStepCandidates(step)
+				continue SolverLoop
+			}
 		}
 
 		// If none of the known techniques allow us to eliminate any additional
@@ -146,6 +144,7 @@ func (s *Solver) Solve() {
 		// all we can do is exit with a partial solution.
 		break
 	}
+
 	color.HiYellow("Total Solver Passes: %d", pass)
 }
 
