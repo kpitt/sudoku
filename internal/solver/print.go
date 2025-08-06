@@ -19,8 +19,8 @@ func printFound(name string, r, c int, val int) {
 	fmt.Fprintf(os.Stderr, "%s: %s=%d\n", name, formatCellRef(r, c), val)
 }
 
-func printEliminate(name string, r, c int, val int) {
-	fmt.Fprintf(os.Stderr, "%s: => %s<>%d\n", name, formatCellRef(r, c), val)
+func printStep(ss *SolutionStep) {
+	fmt.Fprintln(os.Stderr, ss.Format())
 }
 
 func formatCellRef(r, c int) string {

@@ -85,7 +85,10 @@ func (s *Solver) checkNakedPairsForHouse(h *House) bool {
 			}
 
 			locSet := set.NewSet(a, b)
-			if s.eliminateFromOtherLocs(h, valueSet, locSet, "Naked Pair") {
+			ss := NewSolutionStep(fmt.Sprintf("Naked Pair (%s)", h.Type))
+			if s.eliminateFromOtherLocs(h, valueSet, locSet, ss) {
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
@@ -97,9 +100,8 @@ func (s *Solver) checkNakedPairsForHouse(h *House) bool {
 // eliminateFromOtherLocs removes the candidates listed in values from all
 // cells that are not listed in locs.
 func (s *Solver) eliminateFromOtherLocs(
-	h *House, values ValSet, locs LocSet, technique string,
+	h *House, values ValSet, locs LocSet, ss *SolutionStep,
 ) bool {
-	name := fmt.Sprintf("%s (%s)", technique, h.Type)
 	found := false
 	for l := range 9 {
 		if locs.Contains(l) {
@@ -108,8 +110,7 @@ func (s *Solver) eliminateFromOtherLocs(
 		c := h.Cells[l]
 		for _, v := range values.Values() {
 			if c.HasCandidate(v) {
-				printEliminate(name, c.Row, c.Col, v)
-				s.removeCellCandidate(c.Row, c.Col, v)
+				ss.deleteCandidate(c.Row, c.Col, v)
 				found = true
 			}
 		}
@@ -122,11 +123,11 @@ func (s *Solver) eliminateFromOtherLocs(
 // cells from each house in houses whose index is not listed in locs.  Returns
 // true if at least one candidate was eliminated.
 func (s *Solver) eliminateFromOtherLocsMulti(
-	houses []*House, values ValSet, locs LocSet, technique string,
+	houses []*House, values ValSet, locs LocSet, ss *SolutionStep,
 ) bool {
 	updated := false
 	for _, g := range houses {
-		updated = s.eliminateFromOtherLocs(g, values, locs, technique) || updated
+		updated = s.eliminateFromOtherLocs(g, values, locs, ss) || updated
 	}
 
 	return updated
@@ -159,9 +160,10 @@ func (s *Solver) checkLockedCandidatesForLine(line *House) bool {
 				return index
 			})
 			locSet := set.NewSet(boxCells...)
-			if s.eliminateFromOtherLocs(
-				s.boxes[box], valueSet, locSet, "Locked Candidate") {
-
+			ss := NewSolutionStep(fmt.Sprintf("Locked Candidate (%s)", line.Type))
+			if s.eliminateFromOtherLocs(s.boxes[box], valueSet, locSet, ss) {
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
@@ -195,9 +197,10 @@ func (s *Solver) checkPointingTuplesForBox(box *House) bool {
 				return c.Col
 			})
 			locSet := set.NewSet(cols...)
-			if s.eliminateFromOtherLocs(
-				s.rows[row], valueSet, locSet, "Pointing Tuple") {
-
+			ss := NewSolutionStep("Pointing Tuple (Row)")
+			if s.eliminateFromOtherLocs(s.rows[row], valueSet, locSet, ss) {
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
@@ -206,9 +209,10 @@ func (s *Solver) checkPointingTuplesForBox(box *House) bool {
 				return c.Row
 			})
 			locSet := set.NewSet(rows...)
-			if s.eliminateFromOtherLocs(
-				s.columns[col], valueSet, locSet, "Pointing Tuple") {
-
+			ss := NewSolutionStep("Pointing Tuple (Column)")
+			if s.eliminateFromOtherLocs(s.columns[col], valueSet, locSet, ss) {
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
@@ -249,7 +253,10 @@ func (s *Solver) checkHiddenPairsForHouse(h *House) bool {
 			}
 
 			valueSet := set.NewSet(x, y)
-			if s.eliminateOtherValues(h, valueSet, locSet, "Hidden Pair") {
+			ss := NewSolutionStep(fmt.Sprintf("Hidden Pair (%s)", h.Type))
+			if s.eliminateOtherValues(h, valueSet, locSet, ss) {
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
@@ -258,19 +265,17 @@ func (s *Solver) checkHiddenPairsForHouse(h *House) bool {
 	return false
 }
 
-// eliminateOtherValues removes candidates that are not listed in values
-// from the cells in locs.
+// eliminateOtherValues removes candidates that are not listed in values from
+// the cells in locs.
 func (s *Solver) eliminateOtherValues(
-	g *House, values ValSet, locs LocSet, technique string,
+	h *House, values ValSet, locs LocSet, ss *SolutionStep,
 ) bool {
-	name := fmt.Sprintf("%s (%s)", technique, g.Type)
 	found := false
 	for _, l := range locs.Values() {
-		c := g.Cells[l]
+		c := h.Cells[l]
 		for _, v := range c.CandidateValues() {
 			if !values.Contains(v) {
-				printEliminate(name, c.Row, c.Col, v)
-				s.removeCellCandidate(c.Row, c.Col, v)
+				ss.deleteCandidate(c.Row, c.Col, v)
 				found = true
 			}
 		}
@@ -316,7 +321,10 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) bool {
 				}
 
 				locSet := set.NewSet(a, b, c)
-				if s.eliminateFromOtherLocs(h, valueSet, locSet, "Naked Triple") {
+				ss := NewSolutionStep(fmt.Sprintf("Naked Triple (%s)", h.Type))
+				if s.eliminateFromOtherLocs(h, valueSet, locSet, ss) {
+					printStep(ss)
+					s.applyStepCandidates(ss)
 					return true
 				}
 			}
@@ -363,7 +371,10 @@ func (s *Solver) findXWingsInLines(baseLines, coverLines []*House) bool {
 				covers := transformSlice(baseLocs.Values(), func(y int) *House {
 					return coverLines[y]
 				})
-				if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, "X-Wing") {
+				ss := NewSolutionStep("X-Wing")
+				if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, ss) {
+					printStep(ss)
+					s.applyStepCandidates(ss)
 					return true
 				}
 			}
@@ -408,7 +419,10 @@ func (s *Solver) checkHiddenTriplesForHouse(h *House) bool {
 				}
 
 				valueSet := set.NewSet(x, y, z)
-				if s.eliminateOtherValues(h, valueSet, locSet, "Hidden Triple") {
+				ss := NewSolutionStep(fmt.Sprintf("Hidden Triple (%s)", h.Type))
+				if s.eliminateOtherValues(h, valueSet, locSet, ss) {
+					printStep(ss)
+					s.applyStepCandidates(ss)
 					return true
 				}
 			}
@@ -456,9 +470,10 @@ func (s *Solver) checkNakedQuadruplesForHouse(h *House) bool {
 					}
 
 					locSet := set.NewSet(a, b, c, d)
-					if s.eliminateFromOtherLocs(
-						h, valueSet, locSet, "Naked Quadruple") {
-
+					ss := NewSolutionStep(fmt.Sprintf("Naked Quadruple (%s)", h.Type))
+					if s.eliminateFromOtherLocs(h, valueSet, locSet, ss) {
+						printStep(ss)
+						s.applyStepCandidates(ss)
 						return true
 					}
 				}
@@ -537,7 +552,10 @@ func (s *Solver) checkXYWingsForPivot(
 			if !yc.HasCandidate(z) || seesCell(xc, yc) {
 				continue
 			}
-			if s.eliminateXYWingCells(z, xc, yc) {
+			ss := NewSolutionStep("XY-Wing")
+			if s.eliminateXYWingCells(z, xc, yc, ss) {
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
@@ -548,7 +566,7 @@ func (s *Solver) checkXYWingsForPivot(
 
 // eliminateYWingCells removes candidate value z from all cells that see both
 // xCell and yCell.  This assumes that xCell and yCell cannot see each other.
-func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell) bool {
+func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell, ss *SolutionStep) bool {
 	seesYCell := func(cell *puzzle.Cell) bool {
 		return seesCell(cell, yCell)
 	}
@@ -560,8 +578,7 @@ func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell) bool {
 			cells := h.cellsFromLocs(locs.Values())
 			cells = filterSlice(cells, seesYCell)
 			for _, zCell := range cells {
-				printEliminate("XY-Wing", zCell.Row, zCell.Col, z)
-				s.removeCellCandidate(zCell.Row, zCell.Col, z)
+				ss.deleteCandidate(zCell.Row, zCell.Col, z)
 			}
 			// Return true if we found any candidates to remove.
 			return len(cells) != 0
@@ -657,16 +674,23 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) bool {
 			return true
 		}
 
+		ss := NewSolutionStep("XYZ-Wing")
 		r, c := pivot.Row, pivot.Col
 		for _, rowCell := range s.rows[r].Cells {
 			if isYZCandidate(rowCell) &&
-				s.eliminateXYZWingCells(pivot, xzCell, rowCell) {
+				s.eliminateXYZWingCells(pivot, xzCell, rowCell, ss) {
+
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
 		for _, colCell := range s.columns[c].Cells {
 			if isYZCandidate(colCell) &&
-				s.eliminateXYZWingCells(pivot, xzCell, colCell) {
+				s.eliminateXYZWingCells(pivot, xzCell, colCell, ss) {
+
+				printStep(ss)
+				s.applyStepCandidates(ss)
 				return true
 			}
 		}
@@ -679,7 +703,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) bool {
 // three of xyzCell, xzCell, and yzCell.  The value x is the one candidate value
 // that appears as a candidate in all 3 cells.  This assumes that xzCell and
 // yzCell cannot see each other, and that xzCell is in the same box as xyzCell.
-func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell) bool {
+func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ss *SolutionStep) bool {
 	// The z value is the only common candidate between xzCell and yzCell.
 	var z int
 	for _, val := range xzCell.CandidateValues() {
@@ -707,8 +731,7 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell) boo
 	}
 
 	for _, xCell := range cells {
-		printEliminate("XYZ-Wing", xCell.Row, xCell.Col, z)
-		s.removeCellCandidate(xCell.Row, xCell.Col, z)
+		ss.deleteCandidate(xCell.Row, xCell.Col, z)
 	}
 	return true
 }
@@ -747,9 +770,10 @@ func (s *Solver) checkHiddenQuadruplesForHouse(h *House) bool {
 					}
 
 					valueSet := set.NewSet(w, x, y, z)
-					if s.eliminateOtherValues(
-						h, valueSet, locSet, "Hidden Quadruple") {
-
+					ss := NewSolutionStep(fmt.Sprintf("Hidden Quadruple (%s)", h.Type))
+					if s.eliminateOtherValues(h, valueSet, locSet, ss) {
+						printStep(ss)
+						s.applyStepCandidates(ss)
 						return true
 					}
 				}
@@ -811,7 +835,13 @@ func (s *Solver) checkSwordfishForValue(val int, base1 *House, baseLines, coverL
 		covers := transformSlice(base1Locs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
-		return s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, "Swordfish")
+		ss := NewSolutionStep("Swordfish")
+		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, ss) {
+			printStep(ss)
+			s.applyStepCandidates(ss)
+			return true
+		}
+		break
 	}
 
 	return false
@@ -868,7 +898,13 @@ func (s *Solver) checkJellyfishForValue(val int, base1 *House, baseLines, coverL
 		covers := transformSlice(baseLocs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
-		return s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, "Jellyfish")
+		ss := NewSolutionStep("Jellyfish")
+		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, ss) {
+			printStep(ss)
+			s.applyStepCandidates(ss)
+			return true
+		}
+		break
 	}
 
 	return false
@@ -932,8 +968,12 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) bool {
 		// These cells form a unique rectangle, so we can eliminate their candidates
 		// from the cell at the 4th corner of the rectangle, which will have the
 		// same row as the column-wing and the same column as the row-wing.
-		return s.eliminateValuesFromCell(
-			colWing.Row, rowWing.Col, base.Candidates, "Unique Rectangle")
+		ss := NewSolutionStep("Unique Rectangle")
+		if s.eliminateValuesFromCell(colWing.Row, rowWing.Col, base.Candidates, ss) {
+			printStep(ss)
+			s.applyStepCandidates(ss)
+			return true
+		}
 	}
 
 	return false
@@ -942,14 +982,13 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) bool {
 // eliminateValuesFromCell removes all candidates listed in values from the cell
 // at (r,c).
 func (s *Solver) eliminateValuesFromCell(
-	r, c int, values ValSet, technique string,
+	r, c int, values ValSet, ss *SolutionStep,
 ) bool {
 	cell := s.puzzle.Grid[r][c]
 	found := false
 	for _, v := range values.Values() {
 		if cell.HasCandidate(v) {
-			printEliminate(technique, r, c, v)
-			s.removeCellCandidate(r, c, v)
+			ss.deleteCandidate(r, c, v)
 			found = true
 		}
 	}
