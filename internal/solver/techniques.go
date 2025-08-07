@@ -1,6 +1,8 @@
 package solver
 
 import (
+	"slices"
+
 	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/set"
 )
@@ -23,8 +25,17 @@ const (
 	kindXYZWing
 	kindHiddenQuadruple
 	kindUniqueRectangle
+	kindHiddenRectangle
+	kindPointingRectangle
 	kindSwordfish
 	kindJellyfish
+	kindSkyscraper
+	kindTwoStringKite
+	kindEmptyRectangle
+	kindColorChain
+	kindFinnedXWing
+	kindFinnedSwordfish
+	kindFinnedJellyfish
 )
 
 // techniqueNames is a list of display names for each technique kind.
@@ -45,8 +56,21 @@ var techniqueNames = []string{
 	"XYZ-Wing",
 	"Hidden Quadruple",
 	"Unique Rectangle",
+	"Hidden Rectangle",
+	"Pointing Rectangle",
 	"Swordfish",
 	"Jellyfish",
+	"Skyscraper",
+	"2-String Kite",
+	"Empty Rectangle",
+	"Color Chain",
+	"Finned X-Wing",
+	"Finned Swordfish",
+	"Finned Jellyfish",
+}
+
+func techniqueName(tk techniqueKind) string {
+	return techniqueNames[tk]
 }
 
 // ***** IMPORTANT NOTE *****
@@ -127,7 +151,9 @@ func (s *Solver) checkNakedPairsForHouse(h *House) (step *SolutionStep, found bo
 			}
 
 			locSet := set.NewSet(a, b)
-			step = NewSolutionStep(kindNakedPair)
+			step = NewSolutionStep(kindNakedPair).
+				WithCells(h.cellsFromLocs(locSet.Values())...).
+				WithValues(valueSet.Values()...)
 			if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
 				return step.WithHouse(h), true
 			}
@@ -203,9 +229,11 @@ func (s *Solver) checkLockedCandidatesForLine(line *House) (step *SolutionStep, 
 				return index
 			})
 			locSet := set.NewSet(boxCells...)
-			step = NewSolutionStep(kindLockedCandidate)
+			step = NewSolutionStep(kindLockedCandidate).
+				WithValues(val).
+				WithHouse(line)
 			if s.eliminateFromOtherLocs(s.boxes[box], valueSet, locSet, step) {
-				return step.WithHouse(line), true
+				return step, true
 			}
 		}
 	}
@@ -231,8 +259,10 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (step *SolutionStep, foun
 		return l.Size() <= 3
 	})
 
-	step = NewSolutionStep(kindPointingTuple)
 	for val, locs := range candidates {
+		step = NewSolutionStep(kindPointingTuple).
+			WithValues(val).
+			WithHouse(box)
 		valueSet := set.NewSet(val)
 		cells := box.cellsFromLocs(locs.Values())
 		if row, ok := box.sharedRow(locs); ok {
@@ -241,7 +271,7 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (step *SolutionStep, foun
 			})
 			locSet := set.NewSet(cols...)
 			if s.eliminateFromOtherLocs(s.rows[row], valueSet, locSet, step) {
-				return step.WithHouse(s.rows[row]), true
+				return step, true
 			}
 		}
 		if col, ok := box.sharedCol(locs); ok {
@@ -250,7 +280,7 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (step *SolutionStep, foun
 			})
 			locSet := set.NewSet(rows...)
 			if s.eliminateFromOtherLocs(s.columns[col], valueSet, locSet, step) {
-				return step.WithHouse(s.columns[col]), true
+				return step, true
 			}
 		}
 	}
@@ -290,7 +320,9 @@ func (s *Solver) checkHiddenPairsForHouse(h *House) (step *SolutionStep, found b
 			}
 
 			valueSet := set.NewSet(x, y)
-			step = NewSolutionStep(kindHiddenPair)
+			step = NewSolutionStep(kindHiddenPair).
+				WithCells(h.cellsFromLocs(locSet.Values())...).
+				WithValues(valueSet.Values()...)
 			if s.eliminateOtherValues(h, valueSet, locSet, step) {
 				return step.WithHouse(h), true
 			}
@@ -356,7 +388,9 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) (step *SolutionStep, found 
 				}
 
 				locSet := set.NewSet(a, b, c)
-				step = NewSolutionStep(kindNakedTriple)
+				step = NewSolutionStep(kindNakedTriple).
+					WithCells(h.cellsFromLocs(locSet.Values())...).
+					WithValues(valueSet.Values()...)
 				if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
 					return step.WithHouse(h), true
 				}
@@ -408,7 +442,10 @@ func (s *Solver) findXWingsInLines(baseLines, coverLines []*House) (step *Soluti
 				covers := transformSlice(baseLocs.Values(), func(y int) *House {
 					return coverLines[y]
 				})
-				step = NewSolutionStep(kindXWing)
+				step = NewSolutionStep(kindXWing).
+					WithValues(x).
+					WithBases(b1, b2).
+					WithCovers(covers...)
 				if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
 					return step, true
 				}
@@ -452,7 +489,9 @@ func (s *Solver) checkHiddenTriplesForHouse(h *House) (step *SolutionStep, found
 				}
 
 				valueSet := set.NewSet(x, y, z)
-				step = NewSolutionStep(kindHiddenTriple)
+				step = NewSolutionStep(kindHiddenTriple).
+					WithCells(h.cellsFromLocs(locSet.Values())...).
+					WithValues(valueSet.Values()...)
 				if s.eliminateOtherValues(h, valueSet, locSet, step) {
 					return step.WithHouse(h), true
 				}
@@ -501,7 +540,9 @@ func (s *Solver) checkNakedQuadruplesForHouse(h *House) (step *SolutionStep, fou
 					}
 
 					locSet := set.NewSet(a, b, c, d)
-					step = NewSolutionStep(kindNakedQuadruple)
+					step = NewSolutionStep(kindNakedQuadruple).
+						WithCells(h.cellsFromLocs(locSet.Values())...).
+						WithValues(valueSet.Values()...)
 					if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
 						return step.WithHouse(h), true
 					}
@@ -581,7 +622,9 @@ func (s *Solver) checkXYWingsForPivot(
 			if !yc.HasCandidate(z) || seesCell(xc, yc) {
 				continue
 			}
-			step = NewSolutionStep(kindXYWing)
+			step = NewSolutionStep(kindXYWing).
+				WithCells(pivot, xc, yc).
+				WithValues(x, y, z)
 			if s.eliminateXYWingCells(z, xc, yc, step) {
 				return step, true
 			}
@@ -591,7 +634,7 @@ func (s *Solver) checkXYWingsForPivot(
 	return nil, false
 }
 
-// eliminateYWingCells removes candidate value z from all cells that see both
+// eliminateXYWingCells removes candidate value z from all cells that see both
 // xCell and yCell.  This assumes that xCell and yCell cannot see each other.
 func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell, ss *SolutionStep) bool {
 	seesYCell := func(cell *puzzle.Cell) bool {
@@ -700,19 +743,17 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (step *SolutionStep, 
 			return true
 		}
 
-		step = NewSolutionStep(kindXYZWing)
-		r, c := pivot.Row, pivot.Col
-		for _, rowCell := range s.rows[r].Cells {
-			if isYZCandidate(rowCell) &&
-				s.eliminateXYZWingCells(pivot, xzCell, rowCell, step) {
+		yzCells := slices.Concat(
+			s.rows[pivot.Row].Cells[:],
+			s.columns[pivot.Col].Cells[:],
+		)
+		for _, yzCell := range yzCells {
+			if isYZCandidate(yzCell) &&
+				s.eliminateXYZWingCells(pivot, xzCell, yzCell, step) {
 
-				return step, true
-			}
-		}
-		for _, colCell := range s.columns[c].Cells {
-			if isYZCandidate(colCell) &&
-				s.eliminateXYZWingCells(pivot, xzCell, colCell, step) {
-
+				step = NewSolutionStep(kindXYZWing).
+					WithCells(pivot, xzCell, yzCell).
+					WithValues(pivot.CandidateValues()...)
 				return step, true
 			}
 		}
@@ -725,7 +766,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (step *SolutionStep, 
 // three of xyzCell, xzCell, and yzCell.  The value x is the one candidate value
 // that appears as a candidate in all 3 cells.  This assumes that xzCell and
 // yzCell cannot see each other, and that xzCell is in the same box as xyzCell.
-func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ss *SolutionStep) bool {
+func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, step *SolutionStep) bool {
 	// The z value is the only common candidate between xzCell and yzCell.
 	var z int
 	for _, val := range xzCell.CandidateValues() {
@@ -753,7 +794,7 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ss 
 	}
 
 	for _, xCell := range cells {
-		ss.DeleteCandidate(xCell.Row, xCell.Col, z)
+		step.DeleteCandidate(xCell.Row, xCell.Col, z)
 	}
 	return true
 }
@@ -792,7 +833,9 @@ func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (step *SolutionStep, fo
 					}
 
 					valueSet := set.NewSet(w, x, y, z)
-					step = NewSolutionStep(kindHiddenQuadruple)
+					step = NewSolutionStep(kindHiddenQuadruple).
+						WithCells(h.cellsFromLocs(locSet.Values())...).
+						WithValues(valueSet.Values()...)
 					if s.eliminateOtherValues(h, valueSet, locSet, step) {
 						return step.WithHouse(h), true
 					}
@@ -844,10 +887,13 @@ func (s *Solver) checkSwordfishForValue(
 
 	valueSet := set.NewSet(val)
 	locSet := set.NewSet(base1.Index)
-	base1Locs := base1.Unsolved[val]
+	baseLocs := base1.Unsolved[val]
+	step = NewSolutionStep(kindSwordfish).
+		WithValues(val).
+		WithBases(base1)
 	for _, line := range candidates {
 		locs := line.Unsolved[val]
-		if set.Union(base1Locs, locs).Size() != 3 {
+		if set.Union(baseLocs, locs).Size() != 3 {
 			// The locations in this line don't match the locations in base1, so
 			// it can't be part of the Swordfish.
 			continue
@@ -857,16 +903,16 @@ func (s *Solver) checkSwordfishForValue(
 		// 3 matching lines, then we have a Swordfish and we can check for
 		// eliminated candidates.
 		locSet.Add(line.Index)
+		step.WithBases(line)
 		if locSet.Size() < 3 {
 			continue
 		}
 
-		covers := transformSlice(base1Locs.Values(), func(y int) *House {
+		covers := transformSlice(baseLocs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
-		step = NewSolutionStep(kindSwordfish)
 		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
-			return step, true
+			return step.WithCovers(covers...), true
 		}
 		break
 	}
@@ -915,8 +961,11 @@ func (s *Solver) checkJellyfishForValue(
 	valueSet := set.NewSet(val)
 	locSet := set.NewSet(base1.Index)
 	baseLocs := base1.Unsolved[val]
-	for _, g := range candidates {
-		locs := g.Unsolved[val]
+	step = NewSolutionStep(kindJellyfish).
+		WithValues(val).
+		WithBases(base1)
+	for _, line := range candidates {
+		locs := line.Unsolved[val]
 		if set.Union(baseLocs, locs).Size() != 4 {
 			// The locations in this line don't match the locations in base1, so
 			// it can't be part of the Swordfish.
@@ -926,7 +975,8 @@ func (s *Solver) checkJellyfishForValue(
 		// Add the line to the set of matched base indexes.  If we've found
 		// 4 matching lines, then we have a Jellyfish and we can check for
 		// eliminated candidates.
-		locSet.Add(g.Index)
+		locSet.Add(line.Index)
+		step.WithBases(line)
 		if locSet.Size() < 4 {
 			continue
 		}
@@ -934,9 +984,8 @@ func (s *Solver) checkJellyfishForValue(
 		covers := transformSlice(baseLocs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
-		step = NewSolutionStep(kindJellyfish)
 		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
-			return step, true
+			return step.WithCovers(covers...), true
 		}
 		break
 	}
@@ -1005,7 +1054,9 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) (step *SolutionS
 		// These cells form a unique rectangle, so we can eliminate their candidates
 		// from the cell at the 4th corner of the rectangle, which will have the
 		// same row as the column-wing and the same column as the row-wing.
-		step = NewSolutionStep(kindUniqueRectangle)
+		step = NewSolutionStep(kindUniqueRectangle).
+			WithValues(base.Candidates.Values()...).
+			WithCells(base, rowWing, colWing)
 		if s.eliminateValuesFromCell(colWing.Row, rowWing.Col, base.Candidates, step) {
 			return step, true
 		}

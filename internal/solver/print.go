@@ -18,8 +18,3 @@ func printChecking(tk techniqueKind) {
 func (step *SolutionStep) Print() {
 	fmt.Fprintln(os.Stderr, step.Format())
 }
-
-func formatCellRef(index int) string {
-	r, c := rowColFromIndex(index)
-	return fmt.Sprintf("r%dc%d", r+1, c+1)
-}

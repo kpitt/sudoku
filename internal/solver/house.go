@@ -32,6 +32,15 @@ var houseKindNames = []string{
 	"Box",
 }
 
+// houseKindShortNames is a list of single-letter short names for each house
+// kind.  These are used for formatting house references for solution steps.
+// The order of the names must match the order of the houseKind constants.
+var houseKindShortNames = []string{
+	"r",
+	"c",
+	"b",
+}
+
 type UnsolvedFilter = func(int, LocSet) bool
 
 var emptyLocations = set.NewSet[int]()
