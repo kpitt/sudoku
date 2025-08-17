@@ -401,61 +401,6 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) (step *SolutionStep, found 
 	return nil, false
 }
 
-func (s *Solver) findXWings() (step *SolutionStep, found bool) {
-	printChecking(kindXWing)
-	if step, found = s.findXWingsInLines(s.rows, s.columns); found {
-		return step, true
-	}
-	if step, found = s.findXWingsInLines(s.columns, s.rows); found {
-		return step, true
-	}
-	return nil, false
-}
-
-func (s *Solver) findXWingsInLines(baseLines, coverLines []*House) (step *SolutionStep, found bool) {
-	for i, b1 := range baseLines[:8] {
-		for x, b1Locs := range b1.Unsolved {
-			if b1Locs.Size() != 2 {
-				// We need exactly 2 candidates to form an X-Wing.
-				continue
-			}
-
-			valueSet := set.NewSet(x)
-			// Check the remaining base lines for a line that also has exactly
-			// 2 candidates for the same value.
-			for _, b2 := range baseLines[i+1:] {
-				b2Locs := b2.Unsolved[x]
-				if b2Locs == nil || b2Locs.Size() != 2 {
-					continue
-				}
-				baseLocs := set.Union(b1Locs, b2Locs)
-				// If b1 and b2 form an X-Wing, then the x values must be covered
-				// by the same 2 lines in the cover set.  If this is the case,
-				// the union of the x locations from b1 and b2 will have exactly
-				// 2 entries, and the entries will be the indexes of the cover
-				// lines.
-				if baseLocs.Size() != 2 {
-					continue
-				}
-
-				locSet := set.NewSet(b1.Index, b2.Index)
-				covers := transformSlice(baseLocs.Values(), func(y int) *House {
-					return coverLines[y]
-				})
-				step = NewSolutionStep(kindXWing).
-					WithValues(x).
-					WithBases(b1, b2).
-					WithCovers(covers...)
-				if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
-					return step, true
-				}
-			}
-		}
-	}
-
-	return nil, false
-}
-
 func (s *Solver) findHiddenTriples() (step *SolutionStep, found bool) {
 	printChecking(kindHiddenTriple)
 	for _, h := range s.houses {
@@ -748,11 +693,11 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (step *SolutionStep, 
 			s.columns[pivot.Col].Cells[:],
 		)
 		for _, yzCell := range yzCells {
+			step = NewSolutionStep(kindXYZWing)
 			if isYZCandidate(yzCell) &&
 				s.eliminateXYZWingCells(pivot, xzCell, yzCell, step) {
 
-				step = NewSolutionStep(kindXYZWing).
-					WithCells(pivot, xzCell, yzCell).
+				step.WithCells(pivot, xzCell, yzCell).
 					WithValues(pivot.CandidateValues()...)
 				return step, true
 			}
@@ -847,26 +792,52 @@ func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (step *SolutionStep, fo
 	return nil, false
 }
 
+// FISH TECHNIQUES
+
+func (s *Solver) findXWings() (step *SolutionStep, found bool) {
+	return s.findFishOfSize(2, kindXWing)
+}
+
 func (s *Solver) findSwordfish() (step *SolutionStep, found bool) {
-	printChecking(kindSwordfish)
-	if step, found = s.findSwordfishInLines(s.rows, s.columns); found {
+	return s.findFishOfSize(3, kindSwordfish)
+}
+
+func (s *Solver) findJellyfish() (step *SolutionStep, found bool) {
+	return s.findFishOfSize(4, kindJellyfish)
+}
+
+func (s *Solver) findFishOfSize(
+	fishSize int, fishKind techniqueKind,
+) (step *SolutionStep, found bool) {
+	printChecking(fishKind)
+	find := func(baseLines, coverLines []*House) bool {
+		step, found = s.findFishInLines(fishSize, fishKind, baseLines, coverLines)
+		return found
+	}
+	if find(s.rows, s.columns) {
 		return step, true
 	}
-	if step, found = s.findSwordfishInLines(s.columns, s.rows); found {
+	if find(s.columns, s.rows) {
 		return step, true
 	}
 	return nil, false
 }
 
-func (s *Solver) findSwordfishInLines(baseLines, coverLines []*House) (step *SolutionStep, found bool) {
+func (s *Solver) findFishInLines(
+	fishSize int,
+	fishKind techniqueKind,
+	baseLines, coverLines []*House,
+) (step *SolutionStep, found bool) {
 	for _, base := range baseLines {
 		for val, locs := range base.Unsolved {
-			// A Swordfish needs at least one line with exactly 3 candidate
-			// locations for a value.
-			if locs.Size() != 3 {
+			// A fish line must have no more than fishSize candidate locations
+			// for a value. We assume that all singles and smaller fish have
+			// already been found.
+			if locs.Size() > fishSize {
 				continue
 			}
-			if step, found = s.checkSwordfishForValue(val, base, baseLines, coverLines); found {
+
+			if step, found = s.checkFishForValue(fishSize, fishKind, val, base, baseLines, coverLines); found {
 				return step, true
 			}
 		}
@@ -875,119 +846,68 @@ func (s *Solver) findSwordfishInLines(baseLines, coverLines []*House) (step *Sol
 	return nil, false
 }
 
-func (s *Solver) checkSwordfishForValue(
-	val int, base1 *House, baseLines, coverLines []*House,
+func (s *Solver) checkFishForValue(
+	fishSize int,
+	fishKind techniqueKind,
+	val int,
+	base1 *House,
+	baseLines, coverLines []*House,
 ) (step *SolutionStep, found bool) {
 	// Find all base lines other than base1 that have either 2 or 3 candidate
 	// locations for val.
 	candidates := filterSlice(baseLines, func(b2 *House) bool {
 		numLocs := b2.NumLocations(val)
-		return b2.Index != base1.Index && numLocs >= 2 && numLocs <= 3
+		return b2.Index != base1.Index && numLocs >= 2 && numLocs <= fishSize
 	})
 
+	step = NewSolutionStep(fishKind).WithValues(val)
 	valueSet := set.NewSet(val)
-	locSet := set.NewSet(base1.Index)
-	baseLocs := base1.Unsolved[val]
-	step = NewSolutionStep(kindSwordfish).
-		WithValues(val).
-		WithBases(base1)
-	for _, line := range candidates {
-		locs := line.Unsolved[val]
-		if set.Union(baseLocs, locs).Size() != 3 {
-			// The locations in this line don't match the locations in base1, so
-			// it can't be part of the Swordfish.
-			continue
-		}
+	// Variables for storing search results.
+	fishLines := []int{base1.Index}
+	var coverLocs LocSet
 
-		// Add the line to the set of matched base indexes.  If we've found
-		// 3 matching lines, then we have a Swordfish and we can check for
-		// eliminated candidates.
-		locSet.Add(line.Index)
-		step.WithBases(line)
-		if locSet.Size() < 3 {
-			continue
-		}
-
-		covers := transformSlice(baseLocs.Values(), func(y int) *House {
-			return coverLines[y]
-		})
-		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
-			return step.WithCovers(covers...), true
-		}
-		break
-	}
-
-	return nil, false
-}
-
-func (s *Solver) findJellyfish() (step *SolutionStep, found bool) {
-	printChecking(kindJellyfish)
-	if step, found = s.findJellyfishInLines(s.rows, s.columns); found {
-		return step, true
-	}
-	if step, found = s.findJellyfishInLines(s.columns, s.rows); found {
-		return step, true
-	}
-	return nil, false
-}
-
-func (s *Solver) findJellyfishInLines(baseLines, coverLines []*House) (step *SolutionStep, found bool) {
-	for _, base := range baseLines {
-		for val, locs := range base.Unsolved {
-			// A Swordfish needs at least one line with exactly 4 candidate
-			// locations for a value.
-			if locs.Size() != 4 {
+	// Must forward-declare func so we can call it self-recursively.
+	var checkLines func(lines []*House, fishLocs LocSet) bool
+	checkLines = func(lines []*House, fishLocs LocSet) bool {
+		for i, line := range lines {
+			locs := set.Union(fishLocs, line.Unsolved[val])
+			if locs.Size() > fishSize {
+				// Too many locations, so this line can't be part of the fish.
 				continue
 			}
-			if step, found = s.checkJellyfishForValue(val, base, baseLines, coverLines); found {
-				return step, true
+			fishLines = append(fishLines, line.Index)
+			if len(fishLines) == fishSize {
+				// We found enough lines, so we have a fish.
+				// fishLines contains the base lines that make up the fish,
+				// but we need to save the set containing the cover lines.
+				coverLocs = locs
+				return true
 			}
+			// Check recursively until we have enough lines.
+			if checkLines(lines[i+1:], locs) {
+				return true
+			}
+			// No fish found, so backtrack the last line and keep trying.
+			fishLines = fishLines[:len(fishLines)-1]
 		}
+		// No more candidate lines, so we don't have a fish.
+		return false
 	}
 
-	return nil, false
-}
-
-func (s *Solver) checkJellyfishForValue(
-	val int, base1 *House, baseLines, coverLines []*House,
-) (step *SolutionStep, found bool) {
-	// Find all base lines other than base1 that have at least 2 but not more
-	// than 4 candidate locations for val.
-	candidates := filterSlice(baseLines, func(b2 *House) bool {
-		numLocs := b2.NumLocations(val)
-		return b2.Index != base1.Index && numLocs >= 2 && numLocs <= 4
-	})
-
-	valueSet := set.NewSet(val)
-	locSet := set.NewSet(base1.Index)
-	baseLocs := base1.Unsolved[val]
-	step = NewSolutionStep(kindJellyfish).
-		WithValues(val).
-		WithBases(base1)
-	for _, line := range candidates {
-		locs := line.Unsolved[val]
-		if set.Union(baseLocs, locs).Size() != 4 {
-			// The locations in this line don't match the locations in base1, so
-			// it can't be part of the Swordfish.
-			continue
-		}
-
-		// Add the line to the set of matched base indexes.  If we've found
-		// 4 matching lines, then we have a Jellyfish and we can check for
-		// eliminated candidates.
-		locSet.Add(line.Index)
-		step.WithBases(line)
-		if locSet.Size() < 4 {
-			continue
-		}
-
-		covers := transformSlice(baseLocs.Values(), func(y int) *House {
+	if checkLines(candidates, base1.Unsolved[val]) {
+		// We found a fish.
+		bases := transformSlice(fishLines, func(x int) *House {
+			return baseLines[x]
+		})
+		step.WithBases(bases...)
+		covers := transformSlice(coverLocs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
+		step.WithCovers(covers...)
+		locSet := set.NewSet(fishLines...)
 		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
-			return step.WithCovers(covers...), true
+			return step, true
 		}
-		break
 	}
 
 	return nil, false
