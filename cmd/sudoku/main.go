@@ -17,7 +17,10 @@ func main() {
 		fmt.Println("(Ctrl+D to finish on Unix/Linux, Ctrl+Z then Enter on Windows):")
 	}
 
-	p := puzzle.PuzzleFromFile(os.Stdin)
+	p, err := puzzle.FromFile(os.Stdin)
+	if err != nil {
+		fatalError(err.Error())
+	}
 	s := solver.NewSolver(p)
 	s.Solve()
 
@@ -40,4 +43,9 @@ func isStdinTTY() bool {
 
 func isTerminal(f *os.File) bool {
 	return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
+}
+
+func fatalError(msg string) {
+	fmt.Fprintln(os.Stderr, color.HiRedString("error: %s", msg))
+	os.Exit(1)
 }
