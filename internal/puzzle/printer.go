@@ -1,4 +1,4 @@
-package board
+package puzzle
 
 import (
 	"fmt"
@@ -20,9 +20,9 @@ var (
 	fixedValueColor  = color.New(color.Bold, color.FgHiYellow, color.BgHiBlack)
 )
 
-func (b *Board) Print() {
+func (p *Puzzle) Print() {
 	color.HiWhite(borderTop)
-	for r, row := range b.Cells {
+	for r, row := range p.Grid {
 		if r != 0 {
 			if r%3 == 0 {
 				color.HiWhite(dividerMajor)
@@ -35,19 +35,19 @@ func (b *Board) Print() {
 	color.HiWhite(borderBot)
 }
 
-func (b *Board) PrintUnsolvedCounts() {
+func (p *Puzzle) PrintUnsolvedCounts() {
 	color.HiWhite("Unsolved Digits:")
 	for i := range 9 {
 		digit := int8(i + 1)
-		if !b.IsDigitSolved(digit) {
-			fmt.Printf("%d: %d remaining\n", digit, b.unsolvedCounts[digit])
+		if !p.IsDigitSolved(digit) {
+			fmt.Printf("%d: %d remaining\n", digit, p.unsolvedCounts[digit])
 		} else {
 			fmt.Printf("%d: complete\n", digit)
 		}
 	}
 	fmt.Printf("\n%s %d\n",
 		color.HiWhiteString("Total Unsolved Cells:"),
-		b.unsolvedCounts[0])
+		p.unsolvedCounts[0])
 }
 
 func printRow(row [9]*Cell) {
@@ -63,13 +63,13 @@ func printCandidateRow(row [9]*Cell, candidateRow int) {
 		} else {
 			fmt.Print(color.HiWhiteString(edgeMinor))
 		}
-		if cell.IsLocked() {
+		if cell.IsSolved() {
 			cellColor := lockedValueColor
-			if cell.IsFixed {
+			if cell.IsGiven {
 				cellColor = fixedValueColor
 			}
 			if candidateRow == 1 {
-				cellColor.Printf("  %d  ", cell.LockedValue())
+				cellColor.Printf("  %d  ", cell.Value())
 			} else {
 				cellColor.Print("     ")
 			}
