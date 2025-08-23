@@ -29,7 +29,7 @@ type (
 	}
 )
 
-func NewSolutionStep(tk techniqueKind) *SolutionStep {
+func NewStep(tk techniqueKind) *SolutionStep {
 	return &SolutionStep{
 		technique:         tk,
 		deletedCandidates: make([]Candidate, 0),

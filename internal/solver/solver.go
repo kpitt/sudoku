@@ -31,9 +31,6 @@ type (
 	ValLocMap = map[int]LocSet
 )
 
-// Convenience alias for the signature of functions that check a technique.
-type CheckFunc = func() (step *SolutionStep, found bool)
-
 func NewSolver(p *puzzle.Puzzle) *Solver {
 	s := &Solver{puzzle: p}
 
@@ -90,7 +87,8 @@ func (s *Solver) Solve() {
 	b := s.puzzle
 
 	// List of known technique checks in the order they should be applied.
-	checks := []CheckFunc{
+	checks := [](func() bool){
+		s.findHiddenSingles,
 		s.findNakedPairs,
 		s.findLockedCandidates,
 		s.findPointingTuples,
@@ -114,26 +112,13 @@ SolverLoop:
 		pass = pass + 1
 		color.HiYellow("Solver Pass %d:", pass)
 
-		// "Naked Single" and "Hidden Single" are the only techniques that
-		// provide an exact solution for a given cell.  The Naked Single
-		// technique is applied each time a candidate is removed from a cell,
-		// so we only need to look for Hidden Singles here.
-
-		if s.findHiddenSingles() {
-			continue
-		}
-
-		// The remaining techniques are used to eliminate candidate values until
-		// a Naked or Hidden Single is reached.  Techniques are checked in
-		// roughly the order that a human solver would apply them, starting
-		// with the simplest techniques and moving to more complex ones.  If a
-		// technique eliminates at least one candidate, then we start again with
-		// the simplest checks.  Otherwise, we move on to try the next
-		// technique.
+		// Check techniques in roughly the order that a human solver would apply
+		// them, starting with the simplest techniques and moving to more complex
+		// ones.  If a check results in any change to the puzzle state, then
+		// restart the solver loop.  Otherwise, move on to the next technique.
 
 		for _, check := range checks {
-			if step, found := check(); found {
-				s.applyStep(step)
+			if check() {
 				continue SolverLoop
 			}
 		}
@@ -198,7 +183,7 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 	// down the possible options more quickly, and doesn't require iterating
 	// over the entire puzzle grid at the start of each solver pass.
 	if cell.NumCandidates() == 1 {
-		step := NewSolutionStep(kindNakedSingle).
+		step := NewStep(kindNakedSingle).
 			WithPlacedValue(r, c, cell.CandidateValues()[0])
 		s.applyStep(step)
 	}
