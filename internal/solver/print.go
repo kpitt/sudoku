@@ -11,10 +11,10 @@ func printProgress(format string, a ...any) {
 	color.Yellow(format, a...)
 }
 
-func printChecking(tk techniqueKind) {
-	printProgress("Trying %q technique", techniqueName(tk))
+func printChecking(name string) {
+	printProgress("Checking %q technique", name)
 }
 
-func (step *SolutionStep) Print() {
-	fmt.Fprintln(os.Stderr, step.Format())
+func (s *Solver) PrintStep(step *SolutionStep) {
+	fmt.Fprintln(os.Stderr, s.FormatStep(step))
 }

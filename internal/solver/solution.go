@@ -82,10 +82,15 @@ func (step *SolutionStep) DeleteCandidate(row, col, value int) {
 	step.deletedCandidates = append(step.deletedCandidates, Candidate{Index: row*9 + col, Value: value})
 }
 
-func (step *SolutionStep) Format() string {
+func (s *Solver) FormatStep(step *SolutionStep) string {
+	desc := s.getStepDescription(step)
+	return s.formatNamedStep(step, desc)
+}
+
+func (s *Solver) getStepDescription(step *SolutionStep) string {
 	switch step.technique {
 	case kindNakedSingle:
-		return step.formatNakedSingle()
+		return step.formatPlacedValue()
 
 	case kindHiddenSingle:
 		return step.formatHiddenSingle()
@@ -126,38 +131,32 @@ func (step *SolutionStep) Format() string {
 		return step.formatUniqueRectangle()
 
 	case kindEmptyRectangle:
-
-		return step.formatGeneric()
-
-	case kindSkyscraper,
-		kindTwoStringKite,
-		kindColorChain:
-
-		return step.formatGeneric()
+	case kindSkyscraper:
+	case kindTwoStringKite:
+	case kindColorChain:
+		// TODO: not implemented yet
 	}
 
-	return step.stepName()
+	// If we don't have a specific description for this technique, just return
+	// the list of deleted candidates.
+	return step.formatDeletedCandidates()
 }
 
-func (step *SolutionStep) stepName() string {
-	return techniqueName(step.technique)
+func (s *Solver) stepName(step *SolutionStep) string {
+	return s.techniques[step.technique].Name
 }
 
-func (step *SolutionStep) formatNamedStep(desc string) string {
+func (s *Solver) formatNamedStep(step *SolutionStep, desc string) string {
+	name := s.stepName(step)
 	if desc == "" {
-		return step.stepName()
+		return name
 	}
-	return fmt.Sprintf("%s: %s", step.stepName(), desc)
-}
-
-func (step *SolutionStep) formatNakedSingle() string {
-	return step.formatNamedStep(step.formatPlacedValue())
+	return fmt.Sprintf("%s: %s", name, desc)
 }
 
 func (step *SolutionStep) formatHiddenSingle() string {
-	desc := fmt.Sprintf("%d in %s => %s",
+	return fmt.Sprintf("%d in %s => %s",
 		step.values[0], formatHouse(step.house), step.formatPlacedValue())
-	return step.formatNamedStep(desc)
 }
 
 func (step *SolutionStep) formatPlacedValue() string {
@@ -171,18 +170,8 @@ func (step *SolutionStep) formatPlacedValue() string {
 }
 
 func (step *SolutionStep) formatElimination(format string, a ...any) string {
-	var desc string
-	if format == "" {
-		desc = step.formatDeletedCandidates()
-	} else {
-		desc = fmt.Sprintf("%s => %s",
-			fmt.Sprintf(format, a...), step.formatDeletedCandidates())
-	}
-	return step.formatNamedStep(desc)
-}
-
-func (step *SolutionStep) formatGeneric() string {
-	return step.formatElimination("")
+	return fmt.Sprintf("%s => %s",
+		fmt.Sprintf(format, a...), step.formatDeletedCandidates())
 }
 
 func (step *SolutionStep) formatNakedOrHiddenSubset() string {

@@ -10,6 +10,8 @@ import (
 type techniqueKind int
 
 const (
+	// Enum constants for each solving technique, which must be defined in the
+	// order that they should be applied.
 	kindNakedSingle techniqueKind = iota
 	kindHiddenSingle
 	kindNakedPair
@@ -38,39 +40,46 @@ const (
 	kindFinnedJellyfish
 )
 
-// techniqueNames is a list of display names for each technique kind.
-// The order of the names must match the order of the techniqueKind constants.
-var techniqueNames = []string{
-	"Naked Single",
-	"Hidden Single",
-	"Naked Pair",
-	"Locked Candidate",
-	"Pointing Tuple",
-	"Hidden Pair",
-	"Naked Triple",
-	"X-Wing",
-	"Hidden Triple",
-	"Naked Quadruple",
-	"XY-Wing",
-	"Avoidable Rectangle",
-	"XYZ-Wing",
-	"Hidden Quadruple",
-	"Unique Rectangle",
-	"Hidden Rectangle",
-	"Pointing Rectangle",
-	"Swordfish",
-	"Jellyfish",
-	"Skyscraper",
-	"2-String Kite",
-	"Empty Rectangle",
-	"Color Chain",
-	"Finned X-Wing",
-	"Finned Swordfish",
-	"Finned Jellyfish",
+// A Technique represents a single Sudoku solving technique, represented by a
+// display name and a function to check for the technique in the puzzle.
+type Technique struct {
+	Name  string
+	Check func() bool
 }
 
-func techniqueName(tk techniqueKind) string {
-	return techniqueNames[tk]
+// initTechniques initializes a list of the known solving techniques and
+// assigns it to the solver.
+// The order must match the order of the techniqueKind constants.
+func (s *Solver) initTechniques() {
+	// The order of this list must match the order of the techniqueKind constants.
+	s.techniques = []Technique{
+		{"Naked Single", nil}, // checked during candidate removal
+		{"Hidden Single", s.findHiddenSingles},
+		{"Naked Pair", s.findNakedPairs},
+		{"Locked Candidate", s.findLockedCandidates},
+		{"Pointing Tuple", s.findPointingTuples},
+		{"Hidden Pair", s.findHiddenPairs},
+		{"Naked Triple", s.findNakedTriples},
+		{"X-Wing", s.findXWings},
+		{"Hidden Triple", s.findHiddenTriples},
+		{"Naked Quadruple", s.findNakedQuadruples},
+		{"XY-Wing", s.findXYWings},
+		{"Avoidable Rectangle", s.findAvoidableRectangles},
+		{"XYZ-Wing", s.findXYZWings},
+		{"Hidden Quadruple", s.findHiddenQuadruples},
+		{"Unique Rectangle", s.findUniqueRectangles},
+		{"Hidden Rectangle", nil},
+		{"Pointing Rectangle", nil},
+		{"Swordfish", s.findSwordfish},
+		{"Jellyfish", s.findJellyfish},
+		{"Skyscraper", nil},
+		{"2-String Kite", nil},
+		{"Empty Rectangle", nil},
+		{"Color Chain", nil},
+		{"Finned X-Wing", nil},
+		{"Finned Swordfish", nil},
+		{"Finned Jellyfish", nil},
+	}
 }
 
 // ***** IMPORTANT NOTE *****
@@ -92,7 +101,6 @@ func techniqueName(tk techniqueKind) string {
 // Single" pattern.  A "Hidden Single" is the only cell that contains a
 // particular candidate in its house.
 func (s *Solver) findHiddenSingles() bool {
-	printChecking(kindHiddenSingle)
 	found := false
 	for _, h := range s.houses {
 		found = s.checkHiddenSinglesForHouse(h) || found
@@ -116,7 +124,6 @@ func (s *Solver) checkHiddenSinglesForHouse(h *House) bool {
 }
 
 func (s *Solver) findNakedPairs() (found bool) {
-	printChecking(kindNakedPair)
 	return slices.ContainsFunc(s.houses, s.checkNakedPairsForHouse)
 }
 
@@ -196,7 +203,6 @@ func (s *Solver) eliminateFromOtherLocsMulti(
 }
 
 func (s *Solver) findLockedCandidates() (found bool) {
-	printChecking(kindLockedCandidate)
 	for i := range 9 {
 		// We only need to check rows and columns for Locked Candidates.
 		if s.checkLockedCandidatesForLine(s.rows[i]) ||
@@ -238,7 +244,6 @@ func (s *Solver) checkLockedCandidatesForLine(line *House) (found bool) {
 }
 
 func (s *Solver) findPointingTuples() (found bool) {
-	printChecking(kindPointingTuple)
 	for i := range 9 {
 		// We only need to check boxes for Pointing Tuples.
 		if s.checkPointingTuplesForBox(s.boxes[i]) {
@@ -287,7 +292,6 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 }
 
 func (s *Solver) findHiddenPairs() (found bool) {
-	printChecking(kindHiddenPair)
 	return slices.ContainsFunc(s.houses, s.checkHiddenPairsForHouse)
 }
 
@@ -346,7 +350,6 @@ func (s *Solver) eliminateOtherValues(
 }
 
 func (s *Solver) findNakedTriples() (found bool) {
-	printChecking(kindNakedTriple)
 	return slices.ContainsFunc(s.houses, s.checkNakedTriplesForHouse)
 }
 
@@ -392,7 +395,6 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) (found bool) {
 }
 
 func (s *Solver) findHiddenTriples() (found bool) {
-	printChecking(kindHiddenTriple)
 	return slices.ContainsFunc(s.houses, s.checkHiddenTriplesForHouse)
 }
 
@@ -434,7 +436,6 @@ func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
 }
 
 func (s *Solver) findNakedQuadruples() (found bool) {
-	printChecking(kindNakedQuadruple)
 	return slices.ContainsFunc(s.houses, s.checkNakedQuadruplesForHouse)
 }
 
@@ -482,7 +483,6 @@ func (s *Solver) checkNakedQuadruplesForHouse(h *House) (found bool) {
 }
 
 func (s *Solver) findXYWings() (found bool) {
-	printChecking(kindXYWing)
 	// Collect a list of all cells with exactly 2 candidates.
 	p := s.puzzle
 	var candidates []*puzzle.Cell
@@ -604,7 +604,6 @@ func (s *Solver) findAvoidableRectangles() (found bool) {
 // box as the pivot cell in order for it to be possible for any cell to see the
 // pivot and both pincers.
 func (s *Solver) findXYZWings() (found bool) {
-	printChecking(kindXYZWing)
 	// Collect a list of all cells with exactly 3 candidates.
 	p := s.puzzle
 	var candidates []*puzzle.Cell
@@ -725,7 +724,6 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ste
 }
 
 func (s *Solver) findHiddenQuadruples() (found bool) {
-	printChecking(kindHiddenQuadruple)
 	return slices.ContainsFunc(s.houses, s.checkHiddenQuadruplesForHouse)
 }
 
@@ -783,7 +781,6 @@ func (s *Solver) findJellyfish() (found bool) {
 }
 
 func (s *Solver) findFishOfSize(fishSize int, fishKind techniqueKind) (found bool) {
-	printChecking(fishKind)
 	find := func(baseLines, coverLines []*House) bool {
 		return s.findFishInLines(fishSize, fishKind, baseLines, coverLines)
 	}
@@ -882,7 +879,6 @@ func (s *Solver) checkFishForValue(
 }
 
 func (s *Solver) findUniqueRectangles() (found bool) {
-	printChecking(kindUniqueRectangle)
 	b := s.puzzle
 	// Check each cell with exactly 2 candidate values to see if it is the base
 	// corner of a unique rectangle.

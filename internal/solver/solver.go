@@ -11,6 +11,8 @@ import (
 type Solver struct {
 	puzzle *puzzle.Puzzle
 
+	techniques []Technique
+
 	rows    []*House
 	columns []*House
 	boxes   []*House
@@ -33,6 +35,7 @@ type (
 
 func NewSolver(p *puzzle.Puzzle) *Solver {
 	s := &Solver{puzzle: p}
+	s.initTechniques()
 
 	for i := range 9 {
 		row := NewHouse(kindRow, i)
@@ -86,26 +89,6 @@ func (s *Solver) Solve() {
 
 	b := s.puzzle
 
-	// List of known technique checks in the order they should be applied.
-	checks := [](func() bool){
-		s.findHiddenSingles,
-		s.findNakedPairs,
-		s.findLockedCandidates,
-		s.findPointingTuples,
-		s.findHiddenPairs,
-		s.findNakedTriples,
-		s.findXWings,
-		s.findHiddenTriples,
-		s.findNakedQuadruples,
-		s.findXYWings,
-		s.findAvoidableRectangles,
-		s.findXYZWings,
-		s.findHiddenQuadruples,
-		s.findUniqueRectangles,
-		s.findSwordfish,
-		s.findJellyfish,
-	}
-
 	var pass int
 SolverLoop:
 	for !b.IsSolved() {
@@ -117,9 +100,12 @@ SolverLoop:
 		// ones.  If a check results in any change to the puzzle state, then
 		// restart the solver loop.  Otherwise, move on to the next technique.
 
-		for _, check := range checks {
-			if check() {
-				continue SolverLoop
+		for _, t := range s.techniques {
+			if t.Check != nil {
+				printChecking(t.Name)
+				if t.Check() {
+					continue SolverLoop
+				}
 			}
 		}
 
@@ -190,7 +176,7 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 }
 
 func (s *Solver) applyStep(step *SolutionStep) {
-	step.Print()
+	s.PrintStep(step)
 	if step.IsSingle() {
 		// Place the value for this step in the puzzle grid.
 		index := step.indices[0]
