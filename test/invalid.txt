@@ -1,0 +1,10 @@
+# This puzzle is invalid because it has two 9's in the same column.
+.942.....
+.5.....29
+.2.3.6.1.
+.6..89.4.
+7....3..6
+.3..7..8.
+.9.5.2..4
+21....5.8
+.....83..

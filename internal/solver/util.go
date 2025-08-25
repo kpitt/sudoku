@@ -45,6 +45,18 @@ func transformSlice[TSource, TTarget any](
 	return target
 }
 
+// getBoxLoc returns the box number and location within the box for the cell at
+// row r and column c.
+func getBoxLoc(r, c int) (box, loc int) {
+	return r/3*3 + c/3, (r%3)*3 + c%3
+}
+
+// getBoxBase returns the row and column of the top-left cell in the box that
+// contains the cell at (r, c).
+func getBoxBase(r, c int) (rb, cb int) {
+	return r / 3 * 3, c / 3 * 3
+}
+
 // seesCell returns true if cell a sees cell b (i.e. they share a house).
 func seesCell(a, b *puzzle.Cell) bool {
 	// Two cells can see each other if they have the same row, the same column,

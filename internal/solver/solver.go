@@ -57,18 +57,16 @@ func NewSolver(p *puzzle.Puzzle) *Solver {
 			cell := p.Grid[r][c]
 			s.rows[r].Cells[c] = cell
 			s.columns[c].Cells[r] = cell
-			box, index := cell.BoxCoordinates()
-			s.boxes[box].Cells[index] = cell
+			box, loc := getBoxLoc(r, c)
+			s.boxes[box].Cells[loc] = cell
 		}
 	}
-
-	s.initializeCandidates()
 
 	return s
 }
 
-func (s *Solver) initializeCandidates() {
-	printProgress("Processing given values")
+func (s *Solver) initCandidates() {
+	printProgress("Initializing solver candidates")
 	b := s.puzzle
 	for r := range 9 {
 		for c := range 9 {
@@ -87,11 +85,11 @@ func (s *Solver) initializeCandidates() {
 func (s *Solver) Solve() {
 	defer solveTimer(time.Now())
 
-	b := s.puzzle
+	s.initCandidates()
 
 	var pass int
 SolverLoop:
-	for !b.IsSolved() {
+	for !s.puzzle.IsSolved() {
 		pass = pass + 1
 		color.HiYellow("Solver Pass %d:", pass)
 
@@ -129,40 +127,56 @@ func (s *Solver) PlaceValue(r, c int, val int) {
 	}
 }
 
-// eliminateCandidates removes val as a candidate value for row r, column c, and
-// the box containing cell (r,c).  It also removes cell (r,c) as a possible
-// location for any other values in the same row, column, or box.
+// eliminateCandidates removes val from all cached candidates for the row,
+// column, and box containing cell (r,c).
 func (s *Solver) eliminateCandidates(r, c int, val int) {
+	// Get the peer locations in the row, column, and box of cell (r,c) that
+	// contain val as a candidate.
+	row := s.rows[r]
+	peerCols := row.Locations(val)
+	peerCols.Remove(c)
+	col := s.columns[c]
+	peerRows := col.Locations(val)
+	peerRows.Remove(r)
+	boxNum, boxLoc := getBoxLoc(r, c)
+	box := s.boxes[boxNum]
+	peerBoxLocs := box.Locations(val)
+	peerBoxLocs.Remove(boxLoc)
+
 	// Remove value from the cached candidates for the row, column, and box of
 	// cell (r,c).
-	s.rows[r].RemoveCandidateValue(val, c)
-	s.columns[c].RemoveCandidateValue(val, r)
-	box, boxCell, rowBase, colBase := getBoxInfo(r, c)
-	s.boxes[box].RemoveCandidateValue(val, boxCell)
+	row.RemoveCandidateValue(val, c)
+	col.RemoveCandidateValue(val, r)
+	box.RemoveCandidateValue(val, boxLoc)
 
-	for i := range 9 {
-		s.removeCellCandidate(r, i, val) // remove candidate from row r
-		s.removeCellCandidate(i, c, val) // remove candidate from column c
-		// remove candidate from the box that contains (r,c)
-		s.removeCellCandidate(rowBase+i/3, colBase+i%3, val)
+	// Remove (r, c) as a candidate location for val in all peer cells.
+	for pc := range peerCols.All() {
+		s.removeCellCandidate(r, pc, val)
+	}
+	for pr := range peerRows.All() {
+		s.removeCellCandidate(pr, c, val)
+	}
+	br, bc := getBoxBase(r, c)
+	for pbl := range peerBoxLocs.All() {
+		rb, cb := br+pbl/3, bc+pbl%3
+		// Don't reprocess cells which are in the same row or column that we've already processed.
+		if rb != r && cb != c {
+			s.removeCellCandidate(rb, cb, val)
+		}
 	}
 }
 
 func (s *Solver) removeCellCandidate(r, c int, val int) {
-	b := s.puzzle
-	cell := b.Grid[r][c]
-	if cell.IsSolved() || !cell.HasCandidate(val) {
-		return
-	}
+	cell := s.puzzle.Grid[r][c]
 
-	// Remove val from the candidates for this cell.
+	// Make sure val is removed from the candidates for this cell.
 	cell.RemoveCandidate(val)
 
 	// Also remove this cell from the cached locations for value.
-	s.rows[r].RemoveCandidateCell(val, c)
-	s.columns[c].RemoveCandidateCell(val, r)
-	box, boxCell := cell.BoxCoordinates()
-	s.boxes[box].RemoveCandidateCell(val, boxCell)
+	s.rows[r].RemoveCandidateLoc(val, c)
+	s.columns[c].RemoveCandidateLoc(val, r)
+	box, boxLoc := getBoxLoc(r, c)
+	s.boxes[box].RemoveCandidateLoc(val, boxLoc)
 
 	// A "Naked Single" is a cell that has only one possible value.
 	// Checking for a "Naked Single" each time a candidate is removed narrows
@@ -189,12 +203,4 @@ func (s *Solver) applyStep(step *SolutionStep) {
 			s.removeCellCandidate(r, c, dc.Value)
 		}
 	}
-}
-
-func getBoxInfo(r, c int) (box, cellIndex, baseRow, baseCol int) {
-	boxRow, boxCol := r/3, c/3
-	box = boxRow*3 + boxCol
-	baseRow, baseCol = boxRow*3, boxCol*3
-	cellIndex = (r%3)*3 + c%3
-	return box, cellIndex, baseRow, baseCol
 }

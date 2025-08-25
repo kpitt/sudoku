@@ -44,22 +44,37 @@ func (p *Puzzle) IsDigitSolved(digit int) bool {
 
 func (p *Puzzle) GivenValue(r, c int, val int) {
 	p.Grid[r][c].GivenValue(val)
-	p.updateUnsolvedCounts(r, c, val)
+	p.updatePuzzleState(r, c, val)
 }
 
 func (p *Puzzle) PlaceValue(r, c int, val int) bool {
 	cell := p.Grid[r][c]
 	if cell.IsSolved() {
-		if cell.Value() != val {
-			puzzleStateError(fmt.Sprintf("conflicting cell values %d and %d at (%d,%d)",
-				cell.Value(), val, r+1, c+1))
-		}
+		puzzleStateError(fmt.Sprintf("cell (%d,%d) is already solved (value=%d)",
+			r+1, c+1, cell.Value()))
 		return false
 	}
 
 	cell.PlaceValue(val)
-	p.updateUnsolvedCounts(r, c, val)
+	p.updatePuzzleState(r, c, val)
 	return true
+}
+
+// updatePuzzleState updates the valid candidates and unsolved counts after a
+// value of val is placed in cell (r,c).
+func (p *Puzzle) updatePuzzleState(r, c int, val int) {
+	p.removeConflictingCandidates(r, c, val)
+	p.updateUnsolvedCounts(r, c, val)
+}
+
+func (p *Puzzle) removeConflictingCandidates(r, c int, val int) {
+	rb, cb := r/3*3, c/3*3
+	for i := range 9 {
+		p.Grid[r][i].RemoveCandidate(val) // remove candidate from row r
+		p.Grid[i][c].RemoveCandidate(val) // remove candidate from column c
+		// remove candidate from the box that contains (r,c)
+		p.Grid[rb+i/3][cb+i%3].RemoveCandidate(val)
+	}
 }
 
 func (p *Puzzle) updateUnsolvedCounts(r, c int, val int) {

@@ -223,10 +223,10 @@ func (s *Solver) checkLockedCandidatesForLine(line *House) (found bool) {
 
 	for val, locs := range candidates {
 		valueSet := set.NewSet(val)
-		cells := line.cellsFromLocs(locs.Values())
 		if box, ok := line.sharedBox(locs); ok {
+			cells := line.cellsFromLocs(locs.Values())
 			boxCells := transformSlice(cells, func(c *puzzle.Cell) int {
-				_, index := c.BoxCoordinates()
+				_, index := getBoxLoc(c.Row, c.Col)
 				return index
 			})
 			locSet := set.NewSet(boxCells...)

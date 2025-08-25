@@ -1,5 +1,9 @@
 package set
 
+import (
+	"iter"
+)
+
 // Set represents a collection of unique elements of type T.
 type Set[T comparable] struct {
 	elements map[T]struct{}
@@ -45,12 +49,25 @@ func (s *Set[T]) Clear() {
 }
 
 // Values retrieves the values of all elements as a slice.
+// The order of the elements in the slice is arbitrary.
 func (s *Set[T]) Values() []T {
 	values := make([]T, 0, len(s.elements))
 	for k := range s.elements {
 		values = append(values, k)
 	}
 	return values
+}
+
+// All returns an iterator over all elements in the set.
+// The elements are returned in an arbitrary order.
+func (s *Set[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for k := range s.elements {
+			if !yield(k) {
+				return
+			}
+		}
+	}
 }
 
 // Union updates set s to be the union of s with set a.

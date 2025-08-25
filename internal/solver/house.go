@@ -61,24 +61,21 @@ func (h *House) Name() string {
 	return houseKindNames[h.Kind]
 }
 
-// RemoveCandidateCell removes cell from the candidate locations for value val.
-func (h *House) RemoveCandidateCell(val int, cell int) {
-	if cells := h.Unsolved[val]; cells != nil {
-		cells.Remove(cell)
-		if cells.Size() == 0 {
-			delete(h.Unsolved, val)
-		}
+// RemoveCandidateLoc removes loc from the candidate locations for value val.
+func (h *House) RemoveCandidateLoc(val int, loc int) {
+	if locs := h.Unsolved[val]; locs != nil {
+		locs.Remove(loc)
 	}
 }
 
 // RemoveCandidateValue removes all candidate locations that conflict with a
-// locked value of val in cell.
-func (h *House) RemoveCandidateValue(val int, cell int) {
+// solved value of val in loc.
+func (h *House) RemoveCandidateValue(val int, loc int) {
 	// val is no longer an unsolved candidate for any cell in this house.
 	delete(h.Unsolved, val)
-	// If cell is locked, then no other value can appear in that location.
+	// Location loc is solved, so no other value can be placed there.
 	for _, locs := range h.Unsolved {
-		locs.Remove(cell)
+		locs.Remove(loc)
 	}
 }
 

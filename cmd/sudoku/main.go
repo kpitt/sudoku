@@ -21,6 +21,11 @@ func main() {
 	if err != nil {
 		fatalError(err.Error())
 	}
+
+	color.HiWhite("\nInitial Puzzle:")
+	p.Print()
+	fmt.Println()
+
 	s := solver.NewSolver(p)
 	s.Solve()
 

@@ -13,7 +13,7 @@ type Cell struct {
 func NewCell(r, c int) *Cell {
 	return &Cell{
 		Row: r, Col: c,
-		Candidates: set.NewSet[int](1, 2, 3, 4, 5, 6, 7, 8, 9),
+		Candidates: set.NewSet(1, 2, 3, 4, 5, 6, 7, 8, 9),
 	}
 }
 
@@ -60,20 +60,11 @@ func (c *Cell) RemoveCandidate(val int) {
 // numbered from left-to-right and top-to-bottom, with box 0 at the top-left
 // and box 8 at the bottom-right.
 func (c *Cell) Box() int {
-	return (c.Row - c.Row%3) + c.Col/3
+	return c.Row/3*3 + c.Col/3
 }
 
-// BoxCoordinates returns the box coordinates of this cell, which consist of
-// the index of the box that contains the cell and the index of the cell
-// within the box.
-func (c *Cell) BoxCoordinates() (box, index int) {
-	box = c.Row/3*3 + c.Col/3
-	row, col := c.Row%3, c.Col%3
-	return box, row*3 + col
-}
-
-// SameCell returns true if the other Cell refers to the same cell location
-// as this Cell (i.e. both cells have the same row and column).
+// SameCell returns true if other refers to the same cell location as this
+// cell (i.e. both cells have the same row and column).
 func (c *Cell) SameCell(other *Cell) bool {
 	return c.Row == other.Row && c.Col == other.Col
 }
