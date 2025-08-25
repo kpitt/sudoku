@@ -1,28 +1,42 @@
 package solver
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/kpitt/sudoku/internal/puzzle"
 	"github.com/kpitt/sudoku/internal/set"
 )
 
-type Solver struct {
-	puzzle *puzzle.Puzzle
+type (
+	Solver struct {
+		puzzle *puzzle.Puzzle
+		*Options
 
-	techniques []Technique
+		techniques []Technique
 
-	rows    []*House
-	columns []*House
-	boxes   []*House
+		rows    []*House
+		columns []*House
+		boxes   []*House
 
-	// Many techniques need to be applied to all lines (rows and columns) or
-	// all houses.  We can simplify those checks by precalulating a list for
-	// each of those sets.
-	lines  []*House // all rows and columns
-	houses []*House // all rows, columns, and boxes
-}
+		// Many techniques need to be applied to all lines (rows and columns) or
+		// all houses.  We can simplify those checks by precalulating a list for
+		// each of those sets.
+		lines  []*House // all rows and columns
+		houses []*House // all rows, columns, and boxes
+
+		solution []*SolutionStep
+
+		// stats
+		NumChecks int
+		SolveTime time.Duration
+	}
+
+	Options struct {
+		LiveLog     bool
+		EnableDebug bool
+	}
+)
 
 // Convenient type aliases that give semantic meaning to commonly used maps
 // and sets.
@@ -33,9 +47,13 @@ type (
 	ValLocMap = map[int]LocSet
 )
 
-func NewSolver(p *puzzle.Puzzle) *Solver {
-	s := &Solver{puzzle: p}
+func NewSolver(p *puzzle.Puzzle, opts *Options) *Solver {
+	if opts == nil {
+		opts = &Options{}
+	}
+	s := &Solver{puzzle: p, Options: opts}
 	s.initTechniques()
+	s.solution = make([]*SolutionStep, 0, 81)
 
 	for i := range 9 {
 		row := NewHouse(kindRow, i)
@@ -66,7 +84,7 @@ func NewSolver(p *puzzle.Puzzle) *Solver {
 }
 
 func (s *Solver) initCandidates() {
-	printProgress("Initializing solver candidates")
+	s.printProgress("Initializing solver candidates")
 	b := s.puzzle
 	for r := range 9 {
 		for c := range 9 {
@@ -83,16 +101,13 @@ func (s *Solver) initCandidates() {
 // the puzzle is completely solved, or until no more candidates can be eliminated
 // (partial solution).
 func (s *Solver) Solve() {
-	defer solveTimer(time.Now())
+	defer s.solveTimer(time.Now())
 
 	s.initCandidates()
 
-	var pass int
+	s.NumChecks = 0
 SolverLoop:
 	for !s.puzzle.IsSolved() {
-		pass = pass + 1
-		color.HiYellow("Solver Pass %d:", pass)
-
 		// Check techniques in roughly the order that a human solver would apply
 		// them, starting with the simplest techniques and moving to more complex
 		// ones.  If a check results in any change to the puzzle state, then
@@ -100,7 +115,8 @@ SolverLoop:
 
 		for _, t := range s.techniques {
 			if t.Check != nil {
-				printChecking(t.Name)
+				s.printChecking(t.Name)
+				s.NumChecks += 1
 				if t.Check() {
 					continue SolverLoop
 				}
@@ -112,13 +128,10 @@ SolverLoop:
 		// all we can do is exit with a partial solution.
 		break
 	}
-
-	color.HiYellow("Total Solver Passes: %d", pass)
 }
 
-func solveTimer(start time.Time) {
-	elapsed := time.Since(start)
-	color.HiYellow("Total Solver Time:   %v", elapsed)
+func (s *Solver) solveTimer(start time.Time) {
+	s.SolveTime = time.Since(start)
 }
 
 func (s *Solver) PlaceValue(r, c int, val int) {
@@ -190,7 +203,10 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 }
 
 func (s *Solver) applyStep(step *SolutionStep) {
-	s.PrintStep(step)
+	s.solution = append(s.solution, step)
+	if s.LiveLog {
+		fmt.Printf("%2d. %s\n", len(s.solution), s.FormatStep(step))
+	}
 	if step.IsSingle() {
 		// Place the value for this step in the puzzle grid.
 		index := step.indices[0]

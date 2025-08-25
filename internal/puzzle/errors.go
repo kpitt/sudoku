@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 func errPuzzleFormat(format string, a ...any) error {
@@ -22,6 +24,6 @@ func puzzleStateError(msg string) {
 
 func fatalError(msgs ...string) {
 	msg := strings.Join(msgs, ": ")
-	fmt.Fprintf(os.Stderr, "error: %s\n", msg)
+	fmt.Fprintln(os.Stderr, color.HiRedString("error: %s", msg))
 	os.Exit(1)
 }

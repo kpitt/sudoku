@@ -22,24 +22,37 @@ func main() {
 		fatalError(err.Error())
 	}
 
-	color.HiWhite("\nInitial Puzzle:")
+	color.HiBlue("Original Puzzle:")
 	p.Print()
 	fmt.Println()
 
-	s := solver.NewSolver(p)
+	opts := &solver.Options{EnableDebug: true, LiveLog: true}
+	s := solver.NewSolver(p, opts)
 	s.Solve()
 
+	if opts.LiveLog {
+		// Add a line break between the live-log and the solution.
+		fmt.Println()
+	}
 	if p.IsSolved() {
-		color.HiWhite("\nSolution:")
+		color.HiBlue("Solution:")
 		p.Print()
 	} else {
-		color.HiWhite("\nPartial Solution:")
+		color.HiBlue("Partial Solution:")
 		p.PrintCandidateGrid()
 	}
+
+	fmt.Println()
+	color.HiYellow("Total Checks:     %d", s.NumChecks)
+	color.HiYellow("Total Solve Time: %v", s.SolveTime)
 
 	if !p.IsSolved() {
 		fmt.Println()
 		p.PrintUnsolvedCounts()
+	} else if !opts.LiveLog {
+		// Only print solution if steps were not already live-logged.
+		fmt.Println()
+		s.PrintSolution()
 	}
 }
 
