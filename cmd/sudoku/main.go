@@ -26,10 +26,11 @@ func main() {
 
 	if p.IsSolved() {
 		color.HiWhite("\nSolution:")
+		p.Print()
 	} else {
 		color.HiWhite("\nPartial Solution:")
+		p.PrintCandidateGrid()
 	}
-	p.Print()
 
 	if !p.IsSolved() {
 		fmt.Println()

@@ -16,27 +16,45 @@ const (
 )
 
 var (
-	lockedValueColor = color.New(color.Bold, color.FgHiWhite)
-	fixedValueColor  = color.New(color.Bold, color.FgHiYellow, color.BgHiBlack)
+	givenColor     = color.New(color.FgHiBlue)
+	givenLegend    = givenColor.Sprint("Blue")
+	solvedColor    = color.New(color.FgHiGreen)
+	solvedLegend   = solvedColor.Sprint("Green")
+	unsolvedColor  = color.New(color.FgHiBlack)
+	unsolvedLegend = unsolvedColor.Sprint("Gray")
 )
 
 func (p *Puzzle) Print() {
-	color.HiWhite(borderTop)
-	for r, row := range p.Grid {
-		if r != 0 {
-			if r%3 == 0 {
-				color.HiWhite(dividerMajor)
+	fmt.Println("┌───────┬───────┬───────┐")
+	for r := range 9 {
+		if r == 3 || r == 6 {
+			fmt.Println("├───────┼───────┼───────┤")
+		}
+		fmt.Print("│ ")
+		for c := range 9 {
+			if c == 3 || c == 6 {
+				fmt.Print("│ ")
+			}
+			cell := p.Grid[r][c]
+			if cell.IsSolved() {
+				if cell.IsGiven {
+					givenColor.Printf("%d ", cell.Value())
+				} else {
+					solvedColor.Printf("%d ", cell.Value())
+				}
 			} else {
-				color.HiWhite(dividerMinor)
+				unsolvedColor.Print("· ")
 			}
 		}
-		printRow(row)
+		fmt.Println("│")
 	}
-	color.HiWhite(borderBot)
+	fmt.Println("└───────┴───────┴───────┘")
+	fmt.Printf("Legend: %s = Given, %s = Solved, %s = Empty\n",
+		givenLegend, solvedLegend, unsolvedLegend)
 }
 
 func (p *Puzzle) PrintUnsolvedCounts() {
-	color.HiWhite("Unsolved Digits:")
+	color.HiWhite("Unsolved Digits (%d cells):", p.unsolvedCounts[0])
 	for i := range 9 {
 		digit := i + 1
 		if !p.IsDigitSolved(digit) {
@@ -45,9 +63,24 @@ func (p *Puzzle) PrintUnsolvedCounts() {
 			fmt.Printf("%d: complete\n", digit)
 		}
 	}
-	fmt.Printf("\n%s %d\n",
-		color.HiWhiteString("Total Unsolved Cells:"),
-		p.unsolvedCounts[0])
+	fmt.Println()
+}
+
+func (p *Puzzle) PrintCandidateGrid() {
+	fmt.Println(borderTop)
+	for r, row := range p.Grid {
+		if r != 0 {
+			if r%3 == 0 {
+				fmt.Println(dividerMajor)
+			} else {
+				fmt.Println(dividerMinor)
+			}
+		}
+		printRow(row)
+	}
+	fmt.Println(borderBot)
+	fmt.Printf("Legend: %s = Given, %s = Solved, %s = Candidate\n",
+		givenLegend, solvedLegend, unsolvedLegend)
 }
 
 func printRow(row [9]*Cell) {
@@ -59,25 +92,25 @@ func printRow(row [9]*Cell) {
 func printCandidateRow(row [9]*Cell, candidateRow int) {
 	for c, cell := range row {
 		if c != 0 && c%3 == 0 {
-			fmt.Print(color.HiWhiteString(edgeMajor))
+			fmt.Print(edgeMajor)
 		} else {
-			fmt.Print(color.HiWhiteString(edgeMinor))
+			fmt.Print(edgeMinor)
 		}
 		if cell.IsSolved() {
-			cellColor := lockedValueColor
-			if cell.IsGiven {
-				cellColor = fixedValueColor
-			}
 			if candidateRow == 1 {
-				cellColor.Printf("  %d  ", cell.Value())
+				if cell.IsGiven {
+					givenColor.Printf(" [%d] ", cell.Value())
+				} else {
+					solvedColor.Printf("  %d  ", cell.Value())
+				}
 			} else {
-				cellColor.Print("     ")
+				fmt.Print("     ")
 			}
 		} else {
 			cell.printCandidates(candidateRow)
 		}
 	}
-	color.HiWhite(edgeMinor)
+	fmt.Println(edgeMinor)
 }
 
 func (c *Cell) printCandidates(candidateRow int) {
@@ -89,7 +122,7 @@ func (c *Cell) printCandidates(candidateRow int) {
 		}
 		candidate := candidateBase + col
 		if c.HasCandidate(candidate) {
-			fmt.Print(color.HiBlackString("%d", candidate))
+			unsolvedColor.Printf("%d", candidate)
 		} else {
 			fmt.Print(" ")
 		}
