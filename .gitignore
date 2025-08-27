@@ -1,0 +1,4 @@
+solver.test
+*.prof
+
+.idea/
