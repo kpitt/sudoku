@@ -1,8 +1,8 @@
 package solver
 
 import (
+	"github.com/kpitt/sudoku/internal/bitset"
 	"github.com/kpitt/sudoku/internal/puzzle"
-	"github.com/kpitt/sudoku/internal/set"
 )
 
 // A House represents any row, column, or box that must contain each of the
@@ -43,8 +43,6 @@ var houseKindShortNames = []string{
 
 type UnsolvedFilter = func(int, LocSet) bool
 
-var emptyLocations = set.NewSet[int]()
-
 func NewHouse(kind houseKind, index int) *House {
 	h := &House{
 		Unsolved: make(ValLocMap),
@@ -52,7 +50,8 @@ func NewHouse(kind houseKind, index int) *House {
 		Index:    index,
 	}
 	for i := range 9 {
-		h.Unsolved[i+1] = set.NewSet(0, 1, 2, 3, 4, 5, 6, 7, 8)
+		s := bitset.BitSet16(allLocBits)
+		h.Unsolved[i+1] = &s
 	}
 	return h
 }
@@ -98,11 +97,12 @@ func (h *House) NumLocations(val int) int {
 	return 0
 }
 
-func (h *House) Locations(val int) LocSet {
+func (h *House) Locations(val int) *LocSet {
 	if loc, ok := h.Unsolved[val]; ok {
 		return loc
 	}
-	return emptyLocations
+	empty := bitset.BitSet16(0)
+	return &empty
 }
 
 // sharedRow returns the row and true if all cells for the locations in locs

@@ -4,8 +4,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/kpitt/sudoku/internal/bitset"
 	"github.com/kpitt/sudoku/internal/puzzle"
-	"github.com/kpitt/sudoku/internal/set"
 )
 
 type techniqueKind int
@@ -114,7 +114,7 @@ func (s *Solver) findHiddenSingles() bool {
 func (s *Solver) checkHiddenSinglesForHouse(h *House) bool {
 	for val, locs := range h.Unsolved {
 		if locs.Size() == 1 {
-			index := locs.Values()[0]
+			index := locs.Value()
 			cell := h.Cells[index]
 			step := NewStep(kindHiddenSingle).
 				WithHouse(h).
@@ -147,14 +147,14 @@ func (s *Solver) checkNakedPairsForHouse(h *House) (found bool) {
 	for i := 0; i < len(locs)-1; i++ {
 		for j := i + 1; j < len(locs); j++ {
 			a, b := locs[i], locs[j]
-			valueSet := set.Union(values[a], values[b])
+			valueSet := bitset.Union(values[a], values[b])
 			if valueSet.Size() != 2 {
 				// If the union of the location sets does not have exactly 2 elements, then
 				// this is not a naked pair.
 				continue
 			}
 
-			locSet := set.NewSet(a, b)
+			locSet := bitset.FromValues16(a, b)
 			step := NewStep(kindNakedPair)
 			if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
 				s.applyStep(step.
@@ -218,21 +218,21 @@ func (s *Solver) findLockedCandidates() (found bool) {
 }
 
 func (s *Solver) checkLockedCandidatesForLine(line *House) (found bool) {
-	candidates := filterMap(line.Unsolved, func(_ int, l LocSet) bool {
+	candidates := filterMap(line.Unsolved, func(_ int, l *LocSet) bool {
 		// If we have more than 3 candidates in a line, then they can't all be
 		// in the same box.
 		return l.Size() <= 3
 	})
 
 	for val, locs := range candidates {
-		valueSet := set.NewSet(val)
-		if box, ok := line.sharedBox(locs); ok {
+		valueSet := bitset.FromValues16(val)
+		if box, ok := line.sharedBox(*locs); ok {
 			cells := line.cellsFromLocs(locs.Values())
 			boxCells := transformSlice(cells, func(c *puzzle.Cell) int {
 				_, index := getBoxLoc(c.Row, c.Col)
 				return index
 			})
-			locSet := set.NewSet(boxCells...)
+			locSet := bitset.FromValues16(boxCells...)
 			step := NewStep(kindLockedCandidate)
 			if s.eliminateFromOtherLocs(s.boxes[box], valueSet, locSet, step) {
 				s.applyStep(step.
@@ -257,7 +257,7 @@ func (s *Solver) findPointingTuples() (found bool) {
 }
 
 func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
-	candidates := filterMap(box.Unsolved, func(_ int, l LocSet) bool {
+	candidates := filterMap(box.Unsolved, func(_ int, l *LocSet) bool {
 		// If we have more than 3 candidates in a single box, then they can't all
 		// be in the same line.
 		return l.Size() <= 3
@@ -267,23 +267,23 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 		step := NewStep(kindPointingTuple).
 			WithValues(val).
 			WithHouse(box)
-		valueSet := set.NewSet(val)
+		valueSet := bitset.FromValues16(val)
 		cells := box.cellsFromLocs(locs.Values())
-		if row, ok := box.sharedRow(locs); ok {
+		if row, ok := box.sharedRow(*locs); ok {
 			cols := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Col
 			})
-			locSet := set.NewSet(cols...)
+			locSet := bitset.FromValues16(cols...)
 			if s.eliminateFromOtherLocs(s.rows[row], valueSet, locSet, step) {
 				s.applyStep(step)
 				return true
 			}
 		}
-		if col, ok := box.sharedCol(locs); ok {
+		if col, ok := box.sharedCol(*locs); ok {
 			rows := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Row
 			})
-			locSet := set.NewSet(rows...)
+			locSet := bitset.FromValues16(rows...)
 			if s.eliminateFromOtherLocs(s.columns[col], valueSet, locSet, step) {
 				s.applyStep(step)
 				return true
@@ -299,7 +299,7 @@ func (s *Solver) findHiddenPairs() (found bool) {
 }
 
 func (s *Solver) checkHiddenPairsForHouse(h *House) (found bool) {
-	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
+	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
 		return l.Size() == 2
 	})
 	if len(locs) < 2 {
@@ -311,14 +311,14 @@ func (s *Solver) checkHiddenPairsForHouse(h *House) (found bool) {
 	for i := 0; i < len(values)-1; i++ {
 		for j := i + 1; j < len(values); j++ {
 			x, y := values[i], values[j]
-			locSet := set.Union(locs[x], locs[y])
+			locSet := bitset.Union(*locs[x], *locs[y])
 			if locSet.Size() != 2 {
 				// If the union of the location sets does not have exactly 2 elements, then
 				// this is not a hidden pair.
 				continue
 			}
 
-			valueSet := set.NewSet(x, y)
+			valueSet := bitset.FromValues16(x, y)
 			step := NewStep(kindHiddenPair)
 			if s.eliminateOtherValues(h, valueSet, locSet, step) {
 				s.applyStep(step.
@@ -374,14 +374,14 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) (found bool) {
 		for j := i + 1; j < len(locs)-1; j++ {
 			for k := j + 1; k < len(locs); k++ {
 				a, b, c := locs[i], locs[j], locs[k]
-				valueSet := set.Union(values[a], values[b], values[c])
+				valueSet := bitset.Union(values[a], values[b], values[c])
 				if valueSet.Size() != 3 {
 					// If the union of the location sets does not have exactly 3 elements, then
 					// this is not a naked triple.
 					continue
 				}
 
-				locSet := set.NewSet(a, b, c)
+				locSet := bitset.FromValues16(a, b, c)
 				step := NewStep(kindNakedTriple)
 				if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
 					s.applyStep(step.
@@ -402,7 +402,7 @@ func (s *Solver) findHiddenTriples() (found bool) {
 }
 
 func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
-	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
+	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3
 	})
 	if len(locs) < 3 {
@@ -415,14 +415,14 @@ func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
 		for j := i + 1; j < len(values)-1; j++ {
 			for k := j + 1; k < len(values); k++ {
 				x, y, z := values[i], values[j], values[k]
-				locSet := set.Union(locs[x], locs[y], locs[z])
+				locSet := bitset.Union(*locs[x], *locs[y], *locs[z])
 				if locSet.Size() != 3 {
 					// If the union of the location sets does not have exactly 3 elements, then
 					// this is not a hidden triple.
 					continue
 				}
 
-				valueSet := set.NewSet(x, y, z)
+				valueSet := bitset.FromValues16(x, y, z)
 				step := NewStep(kindHiddenTriple)
 				if s.eliminateOtherValues(h, valueSet, locSet, step) {
 					s.applyStep(step.
@@ -461,14 +461,14 @@ func (s *Solver) checkNakedQuadruplesForHouse(h *House) (found bool) {
 			for k := j + 1; k < len(locs)-1; k++ {
 				for n := k + 1; n < len(locs); n++ {
 					a, b, c, d := locs[i], locs[j], locs[k], locs[n]
-					valueSet := set.Union(values[a], values[b], values[c], values[d])
+					valueSet := bitset.Union(values[a], values[b], values[c], values[d])
 					if valueSet.Size() != 4 {
 						// If the union of the location sets does not have exactly 4 elements, then
 						// this is not a naked quadruple.
 						continue
 					}
 
-					locSet := set.NewSet(a, b, c, d)
+					locSet := bitset.FromValues16(a, b, c, d)
 					step := NewStep(kindNakedQuadruple)
 					if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
 						s.applyStep(step.
@@ -731,7 +731,7 @@ func (s *Solver) findHiddenQuadruples() (found bool) {
 }
 
 func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (found bool) {
-	locs := filterMap(h.Unsolved, func(_ int, l LocSet) bool {
+	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
 		return l.Size() == 2 || l.Size() == 3 || l.Size() == 4
 	})
 	if len(locs) < 4 {
@@ -745,14 +745,14 @@ func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (found bool) {
 			for k := j + 1; k < len(values)-1; k++ {
 				for n := k + 1; n < len(values); n++ {
 					w, x, y, z := values[i], values[j], values[k], values[n]
-					locSet := set.Union(locs[w], locs[x], locs[y], locs[z])
+					locSet := bitset.Union(*locs[w], *locs[x], *locs[y], *locs[z])
 					if locSet.Size() != 4 {
 						// If the union of the location sets does not have exactly 4 elements, then
 						// this is not a hidden quadruple.
 						continue
 					}
 
-					valueSet := set.NewSet(w, x, y, z)
+					valueSet := bitset.FromValues16(w, x, y, z)
 					step := NewStep(kindHiddenQuadruple)
 					if s.eliminateOtherValues(h, valueSet, locSet, step) {
 						s.applyStep(step.
@@ -827,7 +827,7 @@ func (s *Solver) checkFishForValue(
 		return b2.Index != base1.Index && numLocs >= 2 && numLocs <= fishSize
 	})
 
-	valueSet := set.NewSet(val)
+	valueSet := bitset.FromValues16(val)
 	// Variables for storing search results.
 	fishLines := []int{base1.Index}
 	var coverLocs LocSet
@@ -836,7 +836,7 @@ func (s *Solver) checkFishForValue(
 	var checkLines func(lines []*House, fishLocs LocSet) bool
 	checkLines = func(lines []*House, fishLocs LocSet) bool {
 		for i, line := range lines {
-			locs := set.Union(fishLocs, line.Unsolved[val])
+			locs := bitset.Union(fishLocs, *line.Unsolved[val])
 			if locs.Size() > fishSize {
 				// Too many locations, so this line can't be part of the fish.
 				continue
@@ -861,7 +861,7 @@ func (s *Solver) checkFishForValue(
 	}
 
 	step := NewStep(fishKind).WithValues(val)
-	if checkLines(candidates, base1.Unsolved[val]) {
+	if checkLines(candidates, *base1.Unsolved[val]) {
 		// We found a fish.
 		bases := transformSlice(fishLines, func(x int) *House {
 			return baseLines[x]
@@ -869,7 +869,7 @@ func (s *Solver) checkFishForValue(
 		covers := transformSlice(coverLocs.Values(), func(y int) *House {
 			return coverLines[y]
 		})
-		locSet := set.NewSet(fishLines...)
+		locSet := bitset.FromValues16(fishLines...)
 		if s.eliminateFromOtherLocsMulti(covers, valueSet, locSet, step) {
 			s.applyStep(step.
 				WithBases(bases...).

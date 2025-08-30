@@ -2,7 +2,6 @@ package solver
 
 import (
 	"github.com/kpitt/sudoku/internal/puzzle"
-	"github.com/kpitt/sudoku/internal/set"
 )
 
 func mapKeys[K comparable, V any](m map[K]V) []K {
@@ -68,12 +67,7 @@ func seesCell(a, b *puzzle.Cell) bool {
 // sameCandidates returns true if 2 cells a and b have exactly the same set of
 // candidate values.
 func sameCandidates(a, b *puzzle.Cell) bool {
-	sizeA := a.NumCandidates()
-	if b.NumCandidates() != sizeA {
-		return false
-	}
-	values := set.Union(a.Candidates, b.Candidates)
-	return values.Size() == sizeA
+	return a.Candidates.Equal(b.Candidates)
 }
 
 func rowColFromIndex(index int) (row, col int) {

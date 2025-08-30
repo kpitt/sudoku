@@ -9,8 +9,8 @@ type Set[T comparable] struct {
 	elements map[T]struct{}
 }
 
-// NewSet initializes a new generic set with the given elements.
-func NewSet[T comparable](items ...T) *Set[T] {
+// New initializes a new generic set with the given elements.
+func New[T comparable](items ...T) *Set[T] {
 	s := &Set[T]{
 		elements: make(map[T]struct{}),
 	}
@@ -41,6 +41,20 @@ func (s *Set[T]) Contains(item T) bool {
 // Size returns the number of elements in the set.
 func (s *Set[T]) Size() int {
 	return len(s.elements)
+}
+
+// Empty returns true if the set is empty.
+func (s *Set[T]) Empty() bool {
+	return s == nil || len(s.elements) == 0
+}
+
+// Equal returns true if this set and set a contain exactly the same elements.
+func (s *Set[T]) Equal(a *Set[T]) bool {
+	if s.Size() != a.Size() {
+		return false
+	}
+	values := Union(s, a)
+	return values.Size() == s.Size()
 }
 
 // Clear removes all elements from the set.
@@ -81,7 +95,7 @@ func (s *Set[T]) Union(a *Set[T]) {
 
 // Union returns a new set containing the union of specified sets.
 func Union[T comparable](sets ...*Set[T]) *Set[T] {
-	u := NewSet[T]()
+	u := New[T]()
 	for _, s := range sets {
 		u.Union(s)
 	}

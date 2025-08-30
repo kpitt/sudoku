@@ -1,0 +1,107 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/kpitt/sudoku/internal/puzzle
+cpu: Apple M1 Max
+                          │ results_baseline.txt │         results_bitset.txt          │
+                          │        sec/op        │   sec/op     vs base                │
+ParseString/Beginner-10             35.799µ ± 0%   2.789µ ± 0%  -92.21% (p=0.000 n=10)
+ParseString/Advanced-10             35.882µ ± 0%   2.820µ ± 1%  -92.14% (p=0.000 n=10)
+ParseString/Expert-10               34.504µ ± 0%   2.685µ ± 1%  -92.22% (p=0.000 n=10)
+ParseString/Pro-10                  34.434µ ± 2%   2.690µ ± 7%  -92.19% (p=0.000 n=10)
+ParseString/Impossible-10           33.734µ ± 0%   2.628µ ± 1%  -92.21% (p=0.000 n=10)
+geomean                              34.86µ        2.721µ       -92.19%
+
+                          │ results_baseline.txt │          results_bitset.txt          │
+                          │         B/op         │     B/op      vs base                │
+ParseString/Beginner-10            46.328Ki ± 0%   4.562Ki ± 0%  -90.15% (p=0.000 n=10)
+ParseString/Advanced-10            46.328Ki ± 0%   4.562Ki ± 0%  -90.15% (p=0.000 n=10)
+ParseString/Expert-10              46.328Ki ± 0%   4.562Ki ± 0%  -90.15% (p=0.000 n=10)
+ParseString/Pro-10                 46.328Ki ± 0%   4.562Ki ± 0%  -90.15% (p=0.000 n=10)
+ParseString/Impossible-10          46.328Ki ± 0%   4.562Ki ± 0%  -90.15% (p=0.000 n=10)
+geomean                             46.33Ki        4.563Ki       -90.15%
+
+                          │ results_baseline.txt │         results_bitset.txt         │
+                          │      allocs/op       │ allocs/op   vs base                │
+ParseString/Beginner-10              569.00 ± 0%   83.00 ± 0%  -85.41% (p=0.000 n=10)
+ParseString/Advanced-10              569.00 ± 0%   83.00 ± 0%  -85.41% (p=0.000 n=10)
+ParseString/Expert-10                569.00 ± 0%   83.00 ± 0%  -85.41% (p=0.000 n=10)
+ParseString/Pro-10                   569.00 ± 0%   83.00 ± 0%  -85.41% (p=0.000 n=10)
+ParseString/Impossible-10            569.00 ± 0%   83.00 ± 0%  -85.41% (p=0.000 n=10)
+geomean                               569.0        83.00       -85.41%
+
+pkg: github.com/kpitt/sudoku/internal/solver
+                         │ results_baseline.txt │         results_bitset.txt          │
+                         │        sec/op        │   sec/op     vs base                │
+NewSolver/Beginner-10              80.43µ ±  2%   12.93µ ± 0%  -83.93% (p=0.000 n=10)
+NewSolver/Advanced-10              80.16µ ±  1%   12.94µ ± 0%  -83.85% (p=0.000 n=10)
+NewSolver/Expert-10                80.35µ ±  0%   12.95µ ± 0%  -83.88% (p=0.000 n=10)
+NewSolver/Pro-10                   80.45µ ±  0%   12.96µ ± 1%  -83.89% (p=0.000 n=10)
+NewSolver/Impossible-10            80.72µ ±  1%   12.97µ ± 1%  -83.93% (p=0.000 n=10)
+Solve/Beginner1-10                243.23µ ±  0%   71.03µ ± 2%  -70.80% (p=0.000 n=10)
+Solve/Beginner2-10                241.87µ ±  2%   59.54µ ± 3%  -75.38% (p=0.000 n=10)
+Solve/Beginner3-10                247.20µ ±  4%   72.01µ ± 0%  -70.87% (p=0.000 n=10)
+Solve/Beginner4-10                244.64µ ±  1%   69.48µ ± 0%  -71.60% (p=0.000 n=10)
+Solve/Advanced1-10                246.78µ ±  0%   63.16µ ± 1%  -74.41% (p=0.000 n=10)
+Solve/Advanced2-10                244.01µ ±  0%   58.14µ ± 0%  -76.17% (p=0.000 n=10)
+Solve/Advanced3-10                248.26µ ±  0%   69.74µ ± 0%  -71.91% (p=0.000 n=10)
+Solve/Advanced4-10                244.17µ ±  0%   59.94µ ± 1%  -75.45% (p=0.000 n=10)
+Solve/Advanced5-10                245.40µ ±  0%   64.92µ ± 1%  -73.55% (p=0.000 n=10)
+Solve/Expert1-10                  302.33µ ±  0%   94.17µ ± 1%  -68.85% (p=0.000 n=10)
+Solve/Expert2-10                   430.0µ ±  3%   141.4µ ± 1%  -67.12% (p=0.000 n=10)
+Solve/Expert3-10                   383.6µ ±  3%   124.0µ ± 1%  -67.67% (p=0.000 n=10)
+Solve/Expert4-10                   424.9µ ±  3%   154.7µ ± 1%  -63.60% (p=0.000 n=10)
+Solve/Expert5-10                   498.2µ ±  1%   201.3µ ± 1%  -59.58% (p=0.000 n=10)
+Solve/Pro1-10                      863.7µ ±  3%   249.6µ ± 0%  -71.10% (p=0.000 n=10)
+Solve/Pro2-10                      911.5µ ± 10%   254.5µ ± 3%  -72.08% (p=0.000 n=10)
+Solve/Pro3-10                     1016.9µ ±  2%   271.9µ ± 4%  -73.26% (p=0.000 n=10)
+Solve/Pro4-10                     1035.1µ ±  2%   315.5µ ± 2%  -69.52% (p=0.000 n=10)
+Solve/Pro5-10                     1568.3µ ±  4%   421.7µ ± 0%  -73.11% (p=0.000 n=10)
+Solve/Impossible1-10              1084.8µ ±  2%   402.2µ ± 0%  -62.92% (p=0.000 n=10)
+Solve/Impossible2-10              1321.4µ ±  3%   422.3µ ± 0%  -68.04% (p=0.000 n=10)
+Solve/Extended1-10                 913.8µ ±  4%   339.3µ ± 0%  -62.87% (p=0.000 n=10)
+Comparison/Beginner-10            244.05µ ±  1%   74.20µ ± 0%  -69.60% (p=0.000 n=10)
+Comparison/Advanced-10            243.71µ ±  1%   64.37µ ± 5%  -73.59% (p=0.000 n=10)
+Comparison/Expert-10              299.34µ ±  0%   94.38µ ± 1%  -68.47% (p=0.000 n=10)
+Comparison/Pro-10                  865.0µ ±  2%   250.6µ ± 1%  -71.03% (p=0.000 n=10)
+Comparison/Impossible-10          1299.8µ ±  1%   403.5µ ± 2%  -68.96% (p=0.000 n=10)
+Solve/TurbotFish-10                               276.7µ ± 1%
+geomean                            354.5µ         98.75µ       -73.02%
+
+                         │ results_baseline.txt │          results_bitset.txt          │
+                         │         B/op         │     B/op      vs base                │
+NewSolver/Beginner-10             145.02Ki ± 0%   20.26Ki ± 0%  -86.03% (p=0.000 n=10)
+NewSolver/Advanced-10             145.02Ki ± 0%   20.26Ki ± 0%  -86.03% (p=0.000 n=10)
+NewSolver/Expert-10               145.02Ki ± 0%   20.26Ki ± 0%  -86.03% (p=0.000 n=10)
+NewSolver/Pro-10                  145.02Ki ± 0%   20.26Ki ± 0%  -86.03% (p=0.000 n=10)
+NewSolver/Impossible-10           145.02Ki ± 0%   20.26Ki ± 0%  -86.03% (p=0.000 n=10)
+Comparison/Beginner-10            199.30Ki ± 0%   33.17Ki ± 0%  -83.36% (p=0.000 n=10)
+Comparison/Advanced-10            199.31Ki ± 0%   33.19Ki ± 0%  -83.35% (p=0.000 n=10)
+Comparison/Expert-10              216.64Ki ± 0%   40.98Ki ± 0%  -81.09% (p=0.000 n=10)
+Comparison/Pro-10                  436.1Ki ± 0%   116.9Ki ± 0%  -73.20% (p=0.000 n=10)
+Comparison/Impossible-10           605.8Ki ± 0%   206.2Ki ± 0%  -65.96% (p=0.000 n=10)
+geomean                            207.2Ki        36.05Ki       -82.60%
+
+                         │ results_baseline.txt │         results_bitset.txt          │
+                         │      allocs/op       │  allocs/op   vs base                │
+NewSolver/Beginner-10               1667.0 ± 0%    452.0 ± 0%  -72.89% (p=0.000 n=10)
+NewSolver/Advanced-10               1667.0 ± 0%    452.0 ± 0%  -72.89% (p=0.000 n=10)
+NewSolver/Expert-10                 1667.0 ± 0%    452.0 ± 0%  -72.89% (p=0.000 n=10)
+NewSolver/Pro-10                    1667.0 ± 0%    452.0 ± 0%  -72.89% (p=0.000 n=10)
+NewSolver/Impossible-10             1667.0 ± 0%    452.0 ± 0%  -72.89% (p=0.000 n=10)
+Comparison/Beginner-10              2387.0 ± 0%    737.0 ± 0%  -69.12% (p=0.000 n=10)
+Comparison/Advanced-10              2388.0 ± 0%    738.0 ± 0%  -69.10% (p=0.000 n=10)
+Comparison/Expert-10                2656.0 ± 0%    998.0 ± 0%  -62.42% (p=0.000 n=10)
+Comparison/Pro-10                   5.888k ± 0%   3.845k ± 0%  -34.70% (p=0.000 n=10)
+Comparison/Impossible-10            8.175k ± 0%   7.303k ± 0%  -10.67% (p=0.000 n=10)
+geomean                             2.496k         882.8       -64.63%
+
+                         │ results_baseline.txt │         results_bitset.txt          │
+                         │      checks/op       │ checks/op   vs base                 │
+Comparison/Beginner-10             0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=10) ¹
+Comparison/Advanced-10             1.000 ± 0%     1.000 ± 0%       ~ (p=1.000 n=10) ¹
+Comparison/Expert-10               17.00 ± 0%     17.00 ± 0%       ~ (p=1.000 n=10) ¹
+Comparison/Pro-10                  39.00 ± 0%     39.00 ± 0%       ~ (p=1.000 n=10) ¹
+Comparison/Impossible-10           68.00 ± 0%     68.00 ± 0%       ~ (p=1.000 n=10) ¹
+geomean                                       ²               +0.00%                ²
+¹ all samples are equal
+² summaries must be >0 to compute geomean

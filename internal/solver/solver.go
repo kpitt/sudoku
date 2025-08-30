@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kpitt/sudoku/internal/bitset"
 	"github.com/kpitt/sudoku/internal/puzzle"
-	"github.com/kpitt/sudoku/internal/set"
 )
 
 type (
@@ -45,10 +45,14 @@ type (
 // Convenient type aliases that give semantic meaning to commonly used maps
 // and sets.
 type (
-	LocSet    = *set.Set[int]
-	ValSet    = *set.Set[int]
+	LocSet    = bitset.BitSet16
+	ValSet    = bitset.BitSet16
 	LocValMap = map[int]ValSet
-	ValLocMap = map[int]LocSet
+	ValLocMap = map[int]*LocSet
+)
+
+const (
+	allLocBits = 0b0111111111
 )
 
 func NewSolver(p *puzzle.Puzzle, opts *Options) *Solver {

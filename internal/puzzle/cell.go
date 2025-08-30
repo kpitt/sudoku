@@ -1,19 +1,21 @@
 package puzzle
 
-import "github.com/kpitt/sudoku/internal/set"
+import "github.com/kpitt/sudoku/internal/bitset"
+
+const allDigitBits = 0b1111111110
 
 type Cell struct {
 	Row, Col int
 	IsGiven  bool
 
 	value      int
-	Candidates *set.Set[int]
+	Candidates bitset.BitSet16
 }
 
 func NewCell(r, c int) *Cell {
 	return &Cell{
 		Row: r, Col: c,
-		Candidates: set.NewSet(1, 2, 3, 4, 5, 6, 7, 8, 9),
+		Candidates: bitset.BitSet16(allDigitBits),
 	}
 }
 
