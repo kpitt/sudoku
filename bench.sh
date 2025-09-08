@@ -28,10 +28,9 @@ if [ "$BENCH_TESTS" = "parse" ] || [ "$BENCH_TESTS" = "all" ]; then
 fi
 
 if [ "$BENCH_TESTS" = "solve" ] || [ "$BENCH_TESTS" = "all" ]; then
-    # Run the Solve benchmark for comparing each test puzzle separately.
-    # The slowest of the test cases should still run in about 1ms, so a default
-    # 1s benchmark run should still give us around a thousand iterations.
-    go test -bench='BenchmarkSolve$' --count=$BENCH_COUNT ./internal/solver
+    # Run the SolveByDifficulty benchmark to compare average performance across
+    # several different puzzles of each difficulty.
+    go test -bench=BenchmarkSolveByDifficulty -benchtime=2s --count=$BENCH_COUNT ./internal/solver
 
     # Run the comparison subset for a longer duration to get better memory usage
     # statistics.

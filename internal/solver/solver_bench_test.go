@@ -42,6 +42,10 @@ var benchmarkCases = []struct {
 	// Impossible level puzzles
 	{"Impossible1", "impossible", "..15..8...6.....4.5.8.......8..51.....58673.....3...6.1.......3.9.....1...7..62.."},
 	{"Impossible2", "impossible", "47...9....9.1..3......8.27....5.19.4....7....6.4..8....58.9....3....6......8...2."},
+	{"Impossible3", "impossible", "4....2..8..284..1...8..6........7.523.......786.....3....1..2...7...96..9..6....5"},
+	// Impossible4 and Impossible5 currently require brute-force to complete.
+	// {"Impossible4", "impossible", "...723.....3...6.........219....4.3.1...8...9.84.1....36.........8...7.....236..."},
+	// {"Impossible5", "impossible", ".48.......3.2.85.....5.......9.75...8......6...53..8.......6.....47.3.5..7....31."},
 
 	// Extra puzzles with unknown difficulty
 	// TurbotFish requires Skyscraper and 2-String Kite techniques, which have not been implemented yet,
