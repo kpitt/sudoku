@@ -113,6 +113,7 @@ func (s *Solver) findHiddenSingles() bool {
 
 func (s *Solver) checkHiddenSinglesForHouse(h *House) bool {
 	for val, locs := range h.Unsolved {
+		s.NumChecks++
 		if locs.Size() == 1 {
 			index := locs.Value()
 			cell := h.Cells[index]
@@ -132,8 +133,9 @@ func (s *Solver) findNakedPairs() (found bool) {
 
 func (s *Solver) checkNakedPairsForHouse(h *House) (found bool) {
 	values := make(LocValMap)
+	// Collect a map of all locations with exactly 2 candidate values.
 	for i, c := range h.Cells {
-		// Collect a map of all locations with exactly 2 candidate values.
+		s.NumChecks++
 		if c.NumCandidates() == 2 {
 			values[i] = c.Candidates
 		}
@@ -146,6 +148,7 @@ func (s *Solver) checkNakedPairsForHouse(h *House) (found bool) {
 	locs := mapKeys(values)
 	for i := 0; i < len(locs)-1; i++ {
 		for j := i + 1; j < len(locs); j++ {
+			s.NumChecks++
 			a, b := locs[i], locs[j]
 			valueSet := bitset.Union(values[a], values[b])
 			if valueSet.Size() != 2 {
@@ -176,11 +179,13 @@ func (s *Solver) eliminateFromOtherLocs(
 ) bool {
 	found := false
 	for l := range 9 {
+		s.NumChecks++
 		if locs.Contains(l) {
 			continue
 		}
 		c := h.Cells[l]
 		for _, v := range values.Values() {
+			s.NumChecks++
 			if c.HasCandidate(v) {
 				step.DeleteCandidate(c.Row, c.Col, v)
 				found = true
@@ -219,6 +224,7 @@ func (s *Solver) findLockedCandidates() (found bool) {
 
 func (s *Solver) checkLockedCandidatesForLine(line *House) (found bool) {
 	candidates := filterMap(line.Unsolved, func(_ int, l *LocSet) bool {
+		s.NumChecks++
 		// If we have more than 3 candidates in a line, then they can't all be
 		// in the same box.
 		return l.Size() <= 3
@@ -227,6 +233,7 @@ func (s *Solver) checkLockedCandidatesForLine(line *House) (found bool) {
 	for val, locs := range candidates {
 		valueSet := bitset.FromValues16(val)
 		if box, ok := line.sharedBox(*locs); ok {
+			s.NumChecks++
 			cells := line.cellsFromLocs(locs.Values())
 			boxCells := transformSlice(cells, func(c *puzzle.Cell) int {
 				_, index := getBoxLoc(c.Row, c.Col)
@@ -258,6 +265,7 @@ func (s *Solver) findPointingTuples() (found bool) {
 
 func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 	candidates := filterMap(box.Unsolved, func(_ int, l *LocSet) bool {
+		s.NumChecks++
 		// If we have more than 3 candidates in a single box, then they can't all
 		// be in the same line.
 		return l.Size() <= 3
@@ -269,6 +277,7 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 			WithHouse(box)
 		valueSet := bitset.FromValues16(val)
 		cells := box.cellsFromLocs(locs.Values())
+		s.NumChecks++
 		if row, ok := box.sharedRow(*locs); ok {
 			cols := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Col
@@ -279,6 +288,7 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 				return true
 			}
 		}
+		s.NumChecks++
 		if col, ok := box.sharedCol(*locs); ok {
 			rows := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Row
@@ -300,6 +310,7 @@ func (s *Solver) findHiddenPairs() (found bool) {
 
 func (s *Solver) checkHiddenPairsForHouse(h *House) (found bool) {
 	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
+		s.NumChecks++
 		return l.Size() == 2
 	})
 	if len(locs) < 2 {
@@ -310,6 +321,7 @@ func (s *Solver) checkHiddenPairsForHouse(h *House) (found bool) {
 	values := mapKeys(locs)
 	for i := 0; i < len(values)-1; i++ {
 		for j := i + 1; j < len(values); j++ {
+			s.NumChecks++
 			x, y := values[i], values[j]
 			locSet := bitset.Union(*locs[x], *locs[y])
 			if locSet.Size() != 2 {
@@ -342,6 +354,7 @@ func (s *Solver) eliminateOtherValues(
 	for _, l := range locs.Values() {
 		c := h.Cells[l]
 		for _, v := range c.CandidateValues() {
+			s.NumChecks++
 			if !values.Contains(v) {
 				step.DeleteCandidate(c.Row, c.Col, v)
 				found = true
@@ -359,6 +372,7 @@ func (s *Solver) findNakedTriples() (found bool) {
 func (s *Solver) checkNakedTriplesForHouse(h *House) (found bool) {
 	values := make(LocValMap)
 	for i, c := range h.Cells {
+		s.NumChecks++
 		// Collect a map of all locations with either 2 or 3 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 {
 			values[i] = c.Candidates
@@ -373,6 +387,7 @@ func (s *Solver) checkNakedTriplesForHouse(h *House) (found bool) {
 	for i := 0; i < len(locs)-2; i++ {
 		for j := i + 1; j < len(locs)-1; j++ {
 			for k := j + 1; k < len(locs); k++ {
+				s.NumChecks++
 				a, b, c := locs[i], locs[j], locs[k]
 				valueSet := bitset.Union(values[a], values[b], values[c])
 				if valueSet.Size() != 3 {
@@ -403,6 +418,7 @@ func (s *Solver) findHiddenTriples() (found bool) {
 
 func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
 	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
+		s.NumChecks++
 		return l.Size() == 2 || l.Size() == 3
 	})
 	if len(locs) < 3 {
@@ -414,6 +430,7 @@ func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
 	for i := 0; i < len(values)-2; i++ {
 		for j := i + 1; j < len(values)-1; j++ {
 			for k := j + 1; k < len(values); k++ {
+				s.NumChecks++
 				x, y, z := values[i], values[j], values[k]
 				locSet := bitset.Union(*locs[x], *locs[y], *locs[z])
 				if locSet.Size() != 3 {
@@ -445,6 +462,7 @@ func (s *Solver) findNakedQuadruples() (found bool) {
 func (s *Solver) checkNakedQuadruplesForHouse(h *House) (found bool) {
 	values := make(LocValMap)
 	for i, c := range h.Cells {
+		s.NumChecks++
 		// Collect a map of all locations with either 2, 3 or 4 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 || c.NumCandidates() == 4 {
 			values[i] = c.Candidates
@@ -460,6 +478,7 @@ func (s *Solver) checkNakedQuadruplesForHouse(h *House) (found bool) {
 		for j := i + 1; j < len(locs)-2; j++ {
 			for k := j + 1; k < len(locs)-1; k++ {
 				for n := k + 1; n < len(locs); n++ {
+					s.NumChecks++
 					a, b, c, d := locs[i], locs[j], locs[k], locs[n]
 					valueSet := bitset.Union(values[a], values[b], values[c], values[d])
 					if valueSet.Size() != 4 {
@@ -491,6 +510,7 @@ func (s *Solver) findXYWings() (found bool) {
 	var candidates []*puzzle.Cell
 	for r := range 9 {
 		for c := range 9 {
+			s.NumChecks++
 			if p.Grid[r][c].NumCandidates() == 2 {
 				candidates = append(candidates, p.Grid[r][c])
 			}
@@ -524,9 +544,11 @@ func (s *Solver) checkXYWingsForPivot(
 	// for cells that have x but not y and cells that have y but not x.
 	var xCells, yCells []*puzzle.Cell
 	for _, cell := range candidates {
+		s.NumChecks++
 		if cell.SameCell(pivot) || cell.NumCandidates() != 2 || !seesCell(cell, pivot) {
 			continue
 		}
+		s.NumChecks++
 		if cell.HasCandidate(x) && !cell.HasCandidate(y) {
 			xCells = append(xCells, cell)
 		} else if !cell.HasCandidate(x) && cell.HasCandidate(y) {
@@ -549,6 +571,7 @@ func (s *Solver) checkXYWingsForPivot(
 		}
 		// Look for a y-cell that also contains z and is not visible from the x-cell.
 		for _, yc := range yCells {
+			s.NumChecks++
 			if !yc.HasCandidate(z) || seesCell(xc, yc) {
 				continue
 			}
@@ -574,6 +597,7 @@ func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell, step *So
 	removeZs := func(h *House) bool {
 		// Find candidate locations for value z in house h, which is assumed to
 		// be a house that contains xCell.
+		s.NumChecks++
 		if locs, ok := h.Unsolved[z]; ok {
 			// Select only the cells that also see yCell.
 			cells := h.cellsFromLocs(locs.Values())
@@ -612,6 +636,7 @@ func (s *Solver) findXYZWings() (found bool) {
 	var candidates []*puzzle.Cell
 	for r := range 9 {
 		for c := range 9 {
+			s.NumChecks++
 			if p.Grid[r][c].NumCandidates() == 3 {
 				candidates = append(candidates, p.Grid[r][c])
 			}
@@ -628,6 +653,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 	box := s.boxes[pivot.Box()]
 	var xzCells []*puzzle.Cell
 	for _, cell := range box.Cells {
+		s.NumChecks++
 		if cell.NumCandidates() == 2 {
 			// The pivot cell can't match here because it has 3 candidates.
 			values := cell.CandidateValues()
@@ -645,6 +671,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 		// Find the y value that does not appear in the xz-cell candidate.
 		var y int
 		for _, val := range pivot.CandidateValues() {
+			s.NumChecks++
 			if !xzCell.HasCandidate(val) {
 				y = val
 				break
@@ -655,6 +682,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 		// exactly 2 candidate values, where one candidate is y and the other
 		// is one of the candidates in xzCell.
 		isYZCandidate := func(cell *puzzle.Cell) bool {
+			s.NumChecks++
 			if cell.Box() == pivot.Box() ||
 				cell.NumCandidates() != 2 ||
 				!cell.HasCandidate(y) {
@@ -662,6 +690,7 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 				return false
 			}
 			for _, val := range cell.CandidateValues() {
+				s.NumChecks++
 				if val != y && !xzCell.HasCandidate(val) {
 					return false
 				}
@@ -697,6 +726,7 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ste
 	// The z value is the only common candidate between xzCell and yzCell.
 	var z int
 	for _, val := range xzCell.CandidateValues() {
+		s.NumChecks++
 		if yzCell.HasCandidate(val) {
 			z = val
 			break
@@ -711,6 +741,7 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ste
 	locs := box.Unsolved[z]
 	cells := box.cellsFromLocs(locs.Values())
 	cells = filterSlice(cells, func(cell *puzzle.Cell) bool {
+		s.NumChecks++
 		return !cell.SameCell(xyzCell) &&
 			!cell.SameCell(xzCell) &&
 			seesCell(cell, yzCell)
@@ -732,6 +763,7 @@ func (s *Solver) findHiddenQuadruples() (found bool) {
 
 func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (found bool) {
 	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
+		s.NumChecks++
 		return l.Size() == 2 || l.Size() == 3 || l.Size() == 4
 	})
 	if len(locs) < 4 {
@@ -744,6 +776,7 @@ func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (found bool) {
 		for j := i + 1; j < len(values)-2; j++ {
 			for k := j + 1; k < len(values)-1; k++ {
 				for n := k + 1; n < len(values); n++ {
+					s.NumChecks++
 					w, x, y, z := values[i], values[j], values[k], values[n]
 					locSet := bitset.Union(*locs[w], *locs[x], *locs[y], *locs[z])
 					if locSet.Size() != 4 {
@@ -797,6 +830,7 @@ func (s *Solver) findFishInLines(
 ) (found bool) {
 	for _, base := range baseLines {
 		for val, locs := range base.Unsolved {
+			s.NumChecks++
 			// A fish line must have no more than fishSize candidate locations
 			// for a value. We assume that all singles and smaller fish have
 			// already been found.
@@ -823,6 +857,7 @@ func (s *Solver) checkFishForValue(
 	// Find all base lines other than base1 that have either 2 or 3 candidate
 	// locations for val.
 	candidates := filterSlice(baseLines, func(b2 *House) bool {
+		s.NumChecks++
 		numLocs := b2.NumLocations(val)
 		return b2.Index != base1.Index && numLocs >= 2 && numLocs <= fishSize
 	})
@@ -836,6 +871,7 @@ func (s *Solver) checkFishForValue(
 	var checkLines func(lines []*House, fishLocs LocSet) bool
 	checkLines = func(lines []*House, fishLocs LocSet) bool {
 		for i, line := range lines {
+			s.NumChecks++
 			locs := bitset.Union(fishLocs, *line.Unsolved[val])
 			if locs.Size() > fishSize {
 				// Too many locations, so this line can't be part of the fish.
@@ -887,6 +923,7 @@ func (s *Solver) findUniqueRectangles() (found bool) {
 	// corner of a unique rectangle.
 	for r := range 9 {
 		for c := range 9 {
+			s.NumChecks++
 			cell := b.Grid[r][c]
 			if cell.NumCandidates() != 2 {
 				continue
@@ -906,6 +943,7 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) (found bool) {
 	// Look for a cell in the same row as base with the same pair of candidates.
 	var rowWing *puzzle.Cell
 	for c := range 9 {
+		s.NumChecks++
 		if c != base.Col {
 			cell := b.Grid[base.Row][c]
 			if sameCandidates(base, cell) {
@@ -922,6 +960,7 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) (found bool) {
 	var colWing *puzzle.Cell
 	for r := range 9 {
 		if r != base.Row {
+			s.NumChecks++
 			cell := b.Grid[r][base.Col]
 			if sameCandidates(base, cell) {
 				colWing = cell
@@ -933,6 +972,7 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) (found bool) {
 		return false
 	}
 
+	s.NumChecks++
 	// The 2 wing cells must be in different boxes, but one of them must be in
 	// the same box as the base.
 	if rowWing.Box() != colWing.Box() &&
@@ -961,6 +1001,7 @@ func (s *Solver) eliminateValuesFromCell(
 	cell := s.puzzle.Grid[r][c]
 	found := false
 	for _, v := range values.Values() {
+		s.NumChecks++
 		if cell.HasCandidate(v) {
 			step.DeleteCandidate(r, c, v)
 			found = true

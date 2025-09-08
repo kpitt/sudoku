@@ -2,111 +2,111 @@ goos: darwin
 goarch: arm64
 pkg: github.com/kpitt/sudoku/internal/solver
 cpu: Apple M1 Max
-BenchmarkSolveByDifficulty/pro-10         	    7942	    301363 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    7851	    298743 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    7933	    300349 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    7818	    300657 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    8000	    301337 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    8101	    299865 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    8025	    301210 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    8084	    300461 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    8002	    301742 ns/op
-BenchmarkSolveByDifficulty/pro-10         	    7686	    302803 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    6009	    396295 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    6020	    396210 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    6171	    395710 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    5934	    396283 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    6121	    395725 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    6079	    396435 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    6001	    396528 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    5966	    397009 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    5982	    396207 ns/op
-BenchmarkSolveByDifficulty/impossible-10  	    6000	    396018 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34934	     68895 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34674	     69217 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34791	     69211 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34575	     69536 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34767	     70203 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   33873	     69816 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34693	     69357 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34722	     69223 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34593	     69248 ns/op
-BenchmarkSolveByDifficulty/beginner-10    	   34496	     69400 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37267	     64382 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37256	     64184 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37844	     63537 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37836	     63562 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37680	     64025 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37666	     63847 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37370	     64095 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37671	     63920 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37088	     64903 ns/op
-BenchmarkSolveByDifficulty/advanced-10    	   37012	     64874 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16118	    149495 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16413	    146227 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16465	    145428 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16514	    145343 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16008	    148778 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16264	    146530 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16530	    144718 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16702	    143685 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16726	    143554 ns/op
-BenchmarkSolveByDifficulty/expert-10      	   16712	    143718 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   34348	     69012 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   35046	     68585 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   34134	     69196 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   34982	     68772 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   35028	     68739 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   34864	     68645 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   34873	     68778 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   35001	     68500 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   35131	     68333 ns/op
+BenchmarkSolveByDifficulty/beginner-10         	   34975	     68593 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37581	     64097 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37465	     64138 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37640	     64075 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37557	     64076 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37700	     63567 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37699	     63632 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37663	     63655 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37770	     63592 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37746	     63653 ns/op
+BenchmarkSolveByDifficulty/advanced-10         	   37070	     64540 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16491	    145267 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16588	    144959 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16568	    145108 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16476	    146407 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16458	    145766 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16432	    145973 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16551	    144879 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16551	    144834 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16500	    145360 ns/op
+BenchmarkSolveByDifficulty/expert-10           	   16585	    144766 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7945	    299222 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    8007	    299577 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7983	    299600 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7987	    299070 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7957	    299891 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7944	    299180 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7990	    299131 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7976	    299555 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7932	    299350 ns/op
+BenchmarkSolveByDifficulty/pro-10              	    7976	    299392 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    5977	    395141 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    6028	    395578 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    6006	    395447 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    5958	    396844 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    6062	    396197 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    6008	    396778 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    5992	    395478 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    5958	    395038 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    5972	    395494 ns/op
+BenchmarkSolveByDifficulty/impossible-10       	    6062	    396023 ns/op
 PASS
-ok  	github.com/kpitt/sudoku/internal/solver	120.153s
+ok  	github.com/kpitt/sudoku/internal/solver	119.953s
 goos: darwin
 goarch: arm64
 pkg: github.com/kpitt/sudoku/internal/solver
 cpu: Apple M1 Max
-BenchmarkComparison/Beginner-10         	   83379	     67941 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89937	     66750 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89728	     66854 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   90138	     67067 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89419	     67182 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89342	     67304 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89161	     67161 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89944	     66872 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89403	     67350 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Beginner-10         	   89242	     67063 ns/op	         0 checks/op	   33968 B/op	     737 allocs/op
-BenchmarkComparison/Advanced-10         	   97660	     61377 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   97671	     61002 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   98175	     60992 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   98368	     60931 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   96674	     61365 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   98379	     60883 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   97920	     61189 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   98300	     61113 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   98044	     61269 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Advanced-10         	   98085	     61287 ns/op	         1.000 checks/op	   33959 B/op	     734 allocs/op
-BenchmarkComparison/Expert-10           	   65041	     91922 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   64897	     91997 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   65577	     91565 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   65517	     91541 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   65664	     92721 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   63712	     94609 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   63031	     94842 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   63483	     94831 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   63249	     94579 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Expert-10           	   63345	     94837 ns/op	        17.00 checks/op	   41816 B/op	     980 allocs/op
-BenchmarkComparison/Pro-10              	   22879	    256566 ns/op	        39.00 checks/op	  119612 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   23382	    262834 ns/op	        39.00 checks/op	  119612 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22526	    268687 ns/op	        39.00 checks/op	  119614 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22881	    263135 ns/op	        39.00 checks/op	  119613 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22717	    264315 ns/op	        39.00 checks/op	  119614 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22512	    266836 ns/op	        39.00 checks/op	  119614 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22464	    266710 ns/op	        39.00 checks/op	  119612 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22454	    267837 ns/op	        39.00 checks/op	  119616 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22608	    265879 ns/op	        39.00 checks/op	  119608 B/op	    3838 allocs/op
-BenchmarkComparison/Pro-10              	   22599	    266639 ns/op	        39.00 checks/op	  119611 B/op	    3838 allocs/op
-BenchmarkComparison/Impossible-10       	   14283	    419141 ns/op	        68.00 checks/op	  211094 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14191	    421265 ns/op	        68.00 checks/op	  211086 B/op	    7290 allocs/op
-BenchmarkComparison/Impossible-10       	   14306	    418261 ns/op	        68.00 checks/op	  211100 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14328	    418972 ns/op	        68.00 checks/op	  211100 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14294	    419929 ns/op	        68.00 checks/op	  211097 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14270	    421017 ns/op	        68.00 checks/op	  211101 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14391	    417137 ns/op	        68.00 checks/op	  211096 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14428	    415411 ns/op	        68.00 checks/op	  211094 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14502	    413977 ns/op	        68.00 checks/op	  211097 B/op	    7291 allocs/op
-BenchmarkComparison/Impossible-10       	   14468	    414949 ns/op	        68.00 checks/op	  211099 B/op	    7291 allocs/op
+BenchmarkComparison/Beginner-10         	   88593	     66693 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89914	     66677 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89750	     66936 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89618	     66936 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89750	     66950 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89773	     66859 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89212	     67013 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89676	     66953 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89594	     66873 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Beginner-10         	   89395	     67059 ns/op	       807.0 checks/op	   33968 B/op	     737 allocs/op
+BenchmarkComparison/Advanced-10         	   98185	     61076 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98277	     61051 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98299	     61049 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98163	     61049 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98398	     61093 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98319	     61066 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98371	     61104 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98488	     61166 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98166	     61051 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Advanced-10         	   98398	     61145 ns/op	       733.4 checks/op	   33959 B/op	     734 allocs/op
+BenchmarkComparison/Expert-10           	   64992	     92297 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   65170	     92212 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   64953	     92273 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   65106	     92379 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   64872	     92280 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   65035	     92275 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   65164	     92175 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   64971	     92385 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   64940	     92242 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Expert-10           	   65028	     92412 ns/op	      3287 checks/op	   41816 B/op	     980 allocs/op
+BenchmarkComparison/Pro-10              	   24010	    249645 ns/op	     11862 checks/op	  119615 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24151	    248148 ns/op	     11862 checks/op	  119613 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24193	    247902 ns/op	     11862 checks/op	  119613 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24204	    247831 ns/op	     11862 checks/op	  119616 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24175	    248361 ns/op	     11862 checks/op	  119613 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24248	    247872 ns/op	     11862 checks/op	  119612 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24207	    248025 ns/op	     11862 checks/op	  119614 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24218	    247905 ns/op	     11862 checks/op	  119613 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24238	    247679 ns/op	     11862 checks/op	  119614 B/op	    3838 allocs/op
+BenchmarkComparison/Pro-10              	   24182	    248235 ns/op	     11862 checks/op	  119615 B/op	    3838 allocs/op
+BenchmarkComparison/Impossible-10       	   15316	    391497 ns/op	     21736 checks/op	  211094 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15105	    396036 ns/op	     21736 checks/op	  211094 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15373	    390240 ns/op	     21737 checks/op	  211097 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15358	    391296 ns/op	     21736 checks/op	  211093 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15307	    392616 ns/op	     21737 checks/op	  211097 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15289	    392036 ns/op	     21736 checks/op	  211098 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15307	    391799 ns/op	     21736 checks/op	  211092 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15339	    391614 ns/op	     21737 checks/op	  211104 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15300	    391843 ns/op	     21737 checks/op	  211101 B/op	    7291 allocs/op
+BenchmarkComparison/Impossible-10       	   15208	    395487 ns/op	     21736 checks/op	  211097 B/op	    7291 allocs/op
 PASS
-ok  	github.com/kpitt/sudoku/internal/solver	299.994s
+ok  	github.com/kpitt/sudoku/internal/solver	300.226s

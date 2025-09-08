@@ -113,10 +113,10 @@ func (s *Solver) processInitialValues() {
 // to using the Dancing Links algorithm as a last resort.
 func (s *Solver) Solve() {
 	defer s.solveTimer(time.Now())
+	s.NumChecks = 0
 
 	s.processInitialValues()
 
-	s.NumChecks = 0
 SolverLoop:
 	for !s.puzzle.IsSolved() {
 		// Check techniques in roughly the order that a human solver would apply
@@ -127,7 +127,7 @@ SolverLoop:
 		for _, t := range s.techniques {
 			if t.Check != nil {
 				s.printChecking(t.Name)
-				s.NumChecks += 1
+				s.NumChecks++
 				if t.Check() {
 					continue SolverLoop
 				}
@@ -195,6 +195,7 @@ func (s *Solver) eliminateCandidates(r, c int, val int) {
 	for pbl := range peerBoxLocs.All() {
 		rb, cb := br+pbl/3, bc+pbl%3
 		// Don't reprocess cells which are in the same row or column that we've already processed.
+		s.NumChecks++
 		if rb != r && cb != c {
 			s.removeCellCandidate(rb, cb, val)
 		}
@@ -217,6 +218,7 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 	// Checking for a "Naked Single" each time a candidate is removed narrows
 	// down the possible options more quickly, and doesn't require iterating
 	// over the entire puzzle grid at the start of each solver pass.
+	s.NumChecks++
 	if cell.NumCandidates() == 1 {
 		step := NewStep(kindNakedSingle).
 			WithPlacedValue(r, c, cell.CandidateValues()[0])
@@ -264,6 +266,6 @@ func (s *Solver) SolveBruteForce() {
 		s.applyBruteForceSteps(dl)
 	}
 
-	// Count each backtrack in the search as a check.
-	s.NumChecks = stats.BacktrackCount
+	// Count each visited node in the search as a check.
+	s.NumChecks = stats.NodesVisited
 }
