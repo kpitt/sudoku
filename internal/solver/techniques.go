@@ -74,7 +74,7 @@ func (s *Solver) initTechniques() {
 		{"Pointing Rectangle", nil},
 		{"Swordfish", s.findSwordfish},
 		{"Jellyfish", s.findJellyfish},
-		{"Skyscraper", nil},
+		{"Skyscraper", s.findSkyscraper},
 		{"2-String Kite", nil},
 		{"Empty Rectangle", nil},
 		{"Color Chain", nil},
@@ -917,6 +917,139 @@ func (s *Solver) checkFishForValue(
 	return false
 }
 
+// SINGLE-DIGIT TECHNIQUES
+
+func (s *Solver) findSkyscraper() (found bool) {
+	check := func(baseLines []*House) bool {
+		return s.checkSkyscraper(baseLines)
+	}
+	// We check for Skyscrapers where the base lines are rows (meaning the strong
+	// links are horizontal) and then where the base lines are columns (vertical
+	// strong links).
+	return check(s.rows) || check(s.columns)
+}
+
+func (s *Solver) checkSkyscraper(baseLines []*House) (found bool) {
+	candidates := make([]*House, 0, 9)
+
+	for val := 1; val <= 9; val++ {
+		// Find all lines that have exactly 2 candidates for this value.
+		candidates = candidates[:0]
+		for _, line := range baseLines {
+			if line.NumLocations(val) == 2 {
+				candidates = append(candidates, line)
+			}
+		}
+
+		if len(candidates) < 2 {
+			continue
+		}
+
+		// Check each pair of candidate lines to see if they form a Skyscraper.
+		for i := 0; i < len(candidates)-1; i++ {
+			base1 := candidates[i]
+			for j := i + 1; j < len(candidates); j++ {
+				base2 := candidates[j]
+
+				// To form a Skyscraper, the two base lines must share exactly
+				// one column (or row, if bases are columns) where the candidate
+				// appears. This shared location forms the base of the Skyscraper.
+				locs1 := base1.Unsolved[val]
+				locs2 := base2.Unsolved[val]
+
+				// Find intersection of locations.
+				// Since we know size is 2, we can just check values.
+				commonLoc := -1
+				top1Loc := -1
+				top2Loc := -1
+
+				// Identify common and distinct locations
+				for _, l1 := range locs1.Values() {
+					if locs2.Contains(l1) {
+						commonLoc = l1
+					} else {
+						top1Loc = l1
+					}
+				}
+
+				// If we didn't find exactly one common location, or if the
+				// locations are identical (2 common locations), then this isn't
+				// a Skyscraper.
+				// Note: If locs1 and locs2 are identical, commonLoc would be set
+				// but top1Loc would remain -1.
+				if commonLoc == -1 || top1Loc == -1 {
+					continue
+				}
+
+				// Find top2Loc (the one in base2 that isn't common)
+				for _, l2 := range locs2.Values() {
+					if l2 != commonLoc {
+						top2Loc = l2
+						break
+					}
+				}
+
+				// The "top" cells are the ends of the strong links that are NOT
+				// the shared base.
+				top1 := base1.Cells[top1Loc]
+				top2 := base2.Cells[top2Loc]
+
+				// Try to eliminate candidates from any cell that sees both tops.
+				step := NewStep(kindSkyscraper).WithValues(val).WithBases(base1, base2)
+				if s.eliminateSkyscraperTargets(val, top1, top2, step) {
+					s.applyStep(step.WithCells(top1, top2))
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *Solver) eliminateSkyscraperTargets(
+	val int, top1, top2 *puzzle.Cell, step *SolutionStep,
+) bool {
+	found := false
+
+	// Check all cells that see top1 to see if they also see top2.
+	// We check the 3 houses that contain top1.
+	houses := []*House{
+		s.rows[top1.Row],
+		s.columns[top1.Col],
+		s.boxes[top1.Box()],
+	}
+
+	checked := make(map[int]bool)
+
+	for _, h := range houses {
+		for _, cell := range h.Cells {
+			// Skip the tops themselves.
+			if cell.SameCell(top1) || cell.SameCell(top2) {
+				continue
+			}
+
+			// Avoid checking the same cell twice (e.g. if it's in multiple shared houses)
+			idx := cell.Row*9 + cell.Col
+			if checked[idx] {
+				continue
+			}
+			checked[idx] = true
+
+			// If the cell contains the candidate value and sees top2, then it
+			// sees both tops, so we can eliminate the candidate.
+			if cell.HasCandidate(val) && seesCell(cell, top2) {
+				step.DeleteCandidate(cell.Row, cell.Col, val)
+				found = true
+			}
+		}
+	}
+
+	return found
+}
+
+// UNIQUENESS TECHNIQUES
+
 func (s *Solver) findUniqueRectangles() (found bool) {
 	b := s.puzzle
 	// Check each cell with exactly 2 candidate values to see if it is the base
@@ -1009,6 +1142,8 @@ func (s *Solver) eliminateValuesFromCell(
 	}
 	return found
 }
+
+// BRUTE FORCE (LAST RESORT) TECHNIQUE
 
 // findBruteForce uses a brute force search to find a solution for any remaining
 // unsolved cells.  The search uses Donald Knuth's Algorithm X with the "Dancing

@@ -28,7 +28,7 @@ classified by human difficulty.
 - [x] **X-Wing**: Two lines have a candidate in the same two positions.
 - [x] **XY-Wing (Y-Wing)**: A "bent" triple of bivalue cells (Pivot + 2 Pincers).
 - [x] **XYZ-Wing**: A variation of XY-Wing where the pivot has 3 candidates.
-- [-] **Skyscraper**: A specific Turbot Fish pattern (offset X-Wing).
+- [x] **Skyscraper**: A specific Turbot Fish pattern (offset X-Wing).
 - [-] **2-String Kite**: Two conjugate pairs connected by a box.
 - [-] **Empty Rectangle**: Intersection logic within a box.
 - [-] **W-Wing**: Two identical bivalue cells connected by a strong link.
