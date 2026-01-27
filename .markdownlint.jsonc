@@ -1,0 +1,33 @@
+// When the AI generates Markdown, it uses a different style than what I
+// would prefer.  These rules are set to match the AI's style to reduce
+// the amount of editing required.
+{
+    "ul-style": { // MD004
+        "style": "dash"
+    },
+    "ul-indent": { // MD007
+        "indent": 4
+    },
+    // Preferred line length settings.
+    // The AI doesn't wrap lines, so these are disabled for now.
+    // "line-length": { // MD013
+    //     "line_length": 88,
+    //     "code_block_line_length": 120
+    // },
+    "line-length": false,
+    "ul-list-marker-space": { // MD030
+        "ol_multi": 2,
+        "ul_multi": 3
+    },
+    "code-block-style": { // MD046
+        "style": "fenced"
+    },
+    "code-fence-style": { // MD048
+        "style": "backtick"
+    },
+    "strong-style": { // MD050
+        "style": "asterisk"
+    },
+    "no-trailing-spaces": true, // MD009
+    "no-hard-tabs": true // MD010
+}
