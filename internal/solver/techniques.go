@@ -75,7 +75,7 @@ func (s *Solver) initTechniques() {
 		{"Swordfish", s.findSwordfish},
 		{"Jellyfish", s.findJellyfish},
 		{"Skyscraper", s.findSkyscraper},
-		{"2-String Kite", nil},
+		{"2-String Kite", s.findTwoStringKite},
 		{"Empty Rectangle", nil},
 		{"Color Chain", nil},
 		{"Finned X-Wing", nil},
@@ -996,7 +996,7 @@ func (s *Solver) checkSkyscraper(baseLines []*House) (found bool) {
 
 				// Try to eliminate candidates from any cell that sees both tops.
 				step := NewStep(kindSkyscraper).WithValues(val).WithBases(base1, base2)
-				if s.eliminateSkyscraperTargets(val, top1, top2, step) {
+				if s.eliminatePeerTargets(val, top1, top2, step) {
 					s.applyStep(step.WithCells(top1, top2))
 					return true
 				}
@@ -1007,25 +1007,25 @@ func (s *Solver) checkSkyscraper(baseLines []*House) (found bool) {
 	return false
 }
 
-func (s *Solver) eliminateSkyscraperTargets(
-	val int, top1, top2 *puzzle.Cell, step *SolutionStep,
+func (s *Solver) eliminatePeerTargets(
+	val int, c1, c2 *puzzle.Cell, step *SolutionStep,
 ) bool {
 	found := false
 
-	// Check all cells that see top1 to see if they also see top2.
-	// We check the 3 houses that contain top1.
+	// Check all cells that see c1 to see if they also see c2.
+	// We check the 3 houses that contain c1.
 	houses := []*House{
-		s.rows[top1.Row],
-		s.columns[top1.Col],
-		s.boxes[top1.Box()],
+		s.rows[c1.Row],
+		s.columns[c1.Col],
+		s.boxes[c1.Box()],
 	}
 
 	checked := make(map[int]bool)
 
 	for _, h := range houses {
 		for _, cell := range h.Cells {
-			// Skip the tops themselves.
-			if cell.SameCell(top1) || cell.SameCell(top2) {
+			// Skip the cells themselves.
+			if cell.SameCell(c1) || cell.SameCell(c2) {
 				continue
 			}
 
@@ -1036,9 +1036,9 @@ func (s *Solver) eliminateSkyscraperTargets(
 			}
 			checked[idx] = true
 
-			// If the cell contains the candidate value and sees top2, then it
-			// sees both tops, so we can eliminate the candidate.
-			if cell.HasCandidate(val) && seesCell(cell, top2) {
+			// If the cell contains the candidate value and sees c2, then it
+			// sees both c1 and c2, so we can eliminate the candidate.
+			if cell.HasCandidate(val) && seesCell(cell, c2) {
 				step.DeleteCandidate(cell.Row, cell.Col, val)
 				found = true
 			}
@@ -1046,6 +1046,113 @@ func (s *Solver) eliminateSkyscraperTargets(
 	}
 
 	return found
+}
+
+func (s *Solver) findTwoStringKite() (found bool) {
+	candidates := make([]*House, 0, 9)
+	for val := 1; val <= 9; val++ {
+		// Find rows and columns with exactly 2 candidates.
+		rowCandidates := candidates[:0] // Reuse slice
+		for _, row := range s.rows {
+			if row.NumLocations(val) == 2 {
+				rowCandidates = append(rowCandidates, row)
+			}
+		}
+		// We can't reuse the same slice for cols since we iterate nested.
+		// So let's just make a new one or manage it carefully.
+		// Actually, let's just filter locally in the loop.
+		// Or loop rows then loop cols.
+
+		if len(rowCandidates) == 0 {
+			continue
+		}
+
+		colCandidates := make([]*House, 0, 9)
+		for _, col := range s.columns {
+			if col.NumLocations(val) == 2 {
+				colCandidates = append(colCandidates, col)
+			}
+		}
+
+		if len(colCandidates) == 0 {
+			continue
+		}
+
+		// Check each Row against each Col
+		for _, row := range rowCandidates {
+			for _, col := range colCandidates {
+				if s.checkTwoStringKite(val, row, col) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (s *Solver) checkTwoStringKite(val int, row, col *House) (found bool) {
+	// Row candidates (2 of them)
+	rLocs := row.Unsolved[val].Values()
+	// Col candidates (2 of them)
+	cLocs := col.Unsolved[val].Values()
+
+	// rLocs are column indices in the row.
+	// cLocs are row indices in the column.
+
+	checkPoly := func(rP, rTail, cP, cTail int) bool {
+		// rP is column index of the row candidate involved in the connection
+		// cP is row index of the col candidate involved in the connection
+
+		rCell := row.Cells[rP]
+		cCell := col.Cells[cP]
+
+		// Ensure they are not the same cell (intersection)
+		if rCell.SameCell(cCell) {
+			return false
+		}
+
+		// Check if they are in the same box (connection)
+		if rCell.Box() == cCell.Box() {
+			// Found connection!
+
+			// Tails are the other candidates
+			tail1 := row.Cells[rTail]
+			tail2 := col.Cells[cTail]
+
+			step := NewStep(kindTwoStringKite).
+				WithValues(val).
+				WithBases(row, col)
+
+			if s.eliminatePeerTargets(val, tail1, tail2, step) {
+				s.applyStep(step.
+					WithCells(tail1, tail2, rCell, cCell))
+				// Note: visualization usually highlights tails and connection cells.
+				// We pass all 4.
+				return true
+			}
+		}
+		return false
+	}
+
+	// Try all combinations
+	// Pair 1: (row[0], col[0]) connect?
+	if checkPoly(rLocs[0], rLocs[1], cLocs[0], cLocs[1]) {
+		return true
+	}
+	// Pair 2: (row[0], col[1]) connect?
+	if checkPoly(rLocs[0], rLocs[1], cLocs[1], cLocs[0]) {
+		return true
+	}
+	// Pair 3: (row[1], col[0]) connect?
+	if checkPoly(rLocs[1], rLocs[0], cLocs[0], cLocs[1]) {
+		return true
+	}
+	// Pair 4: (row[1], col[1]) connect?
+	if checkPoly(rLocs[1], rLocs[0], cLocs[1], cLocs[0]) {
+		return true
+	}
+
+	return false
 }
 
 // UNIQUENESS TECHNIQUES

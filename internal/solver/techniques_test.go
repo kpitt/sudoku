@@ -68,3 +68,46 @@ func TestFindSkyscraper(t *testing.T) {
 		t.Errorf("Target (3,7) should have eliminated candidate %d", val)
 	}
 }
+
+func TestFindTwoStringKite(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+	val := 1
+
+	setCandidate := func(r, c int) {
+		p.Grid[r][c].Candidates.Add(val)
+		s.rows[r].Unsolved[val].Add(c)
+		s.columns[c].Unsolved[val].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Grid[r][c].Box()].Unsolved[val].Add(boxLoc)
+	}
+
+	// Clear candidates for val 1
+	for r := 0; r < 9; r++ {
+		s.rows[r].Unsolved[val].Clear()
+		for c := 0; c < 9; c++ {
+			p.Grid[r][c].RemoveCandidate(val)
+		}
+	}
+	for c := 0; c < 9; c++ {
+		s.columns[c].Unsolved[val].Clear()
+	}
+	for b := 0; b < 9; b++ {
+		s.boxes[b].Unsolved[val].Clear()
+	}
+
+	setCandidate(0, 0)
+	setCandidate(0, 4)
+	setCandidate(1, 2)
+	setCandidate(5, 2)
+	setCandidate(5, 4) // Target
+
+	found := s.findTwoStringKite()
+	if !found {
+		t.Errorf("2-String Kite should have been found")
+	}
+
+	if p.Grid[5][4].HasCandidate(val) {
+		t.Errorf("Candidate 1 should be eliminated from (5,4)")
+	}
+}
