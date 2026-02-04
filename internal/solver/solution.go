@@ -106,8 +106,8 @@ func (s *Solver) getStepDescription(step *SolutionStep) string {
 
 		return step.formatNakedOrHiddenSubset()
 
-	case kindLockedCandidate,
-		kindPointingTuple:
+	case kindLockedCandidatesClaiming,
+		kindLockedCandidatesPointing:
 
 		return step.formatLockedCandidate()
 
@@ -126,9 +126,11 @@ func (s *Solver) getStepDescription(step *SolutionStep) string {
 		return step.formatXYZWing()
 
 	case kindAvoidableRectangle,
-		kindUniqueRectangle,
-		kindHiddenRectangle,
-		kindPointingRectangle:
+		kindUniqueRectangle1,
+		kindUniqueRectangle2,
+		kindUniqueRectangle3,
+		kindUniqueRectangle4,
+		kindHiddenRectangle:
 
 		return step.formatUniqueRectangle()
 
@@ -137,7 +139,7 @@ func (s *Solver) getStepDescription(step *SolutionStep) string {
 	case kindEmptyRectangle:
 		// TODO: not implemented yet
 		break
-	case kindColorChain:
+	case kindSimpleColoring:
 		// TODO: not implemented yet
 		break
 

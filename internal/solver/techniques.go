@@ -15,30 +15,39 @@ const (
 	// order that they should be applied.
 	kindNakedSingle techniqueKind = iota
 	kindHiddenSingle
+	kindLockedCandidatesPointing
+	kindLockedCandidatesClaiming
 	kindNakedPair
-	kindLockedCandidate
-	kindPointingTuple
-	kindHiddenPair
 	kindNakedTriple
-	kindXWing
+	kindHiddenPair
 	kindHiddenTriple
 	kindNakedQuadruple
-	kindXYWing
-	kindAvoidableRectangle
-	kindXYZWing
 	kindHiddenQuadruple
-	kindUniqueRectangle
-	kindHiddenRectangle
-	kindPointingRectangle
+	kindXWing
 	kindSwordfish
 	kindJellyfish
+	kindRemotePair
+	kindBUG
 	kindSkyscraper
 	kindTwoStringKite
 	kindEmptyRectangle
-	kindColorChain
+	kindWWing
+	kindXYWing
+	kindXYZWing
+	kindAvoidableRectangle
+	kindUniqueRectangle1
+	kindUniqueRectangle2
+	kindUniqueRectangle3
+	kindUniqueRectangle4
+	kindHiddenRectangle
 	kindFinnedXWing
 	kindFinnedSwordfish
 	kindFinnedJellyfish
+	kindSueDeCoq
+	kindSimpleColoring
+	kindMultiColoring
+	kindXChain
+	kindXYChain
 	kindBruteForce
 )
 
@@ -57,30 +66,39 @@ func (s *Solver) initTechniques() {
 	s.techniques = []Technique{
 		{"Naked Single", nil}, // checked during candidate removal
 		{"Hidden Single", s.findHiddenSingles},
+		{"Locked Candidates Type 1 (Pointing)", s.findPointingTuples},
+		{"Locked Candidates Type 2 (Claiming)", s.findClaimingTuples},
 		{"Naked Pair", s.findNakedPairs},
-		{"Locked Candidate", s.findLockedCandidates},
-		{"Pointing Tuple", s.findPointingTuples},
-		{"Hidden Pair", s.findHiddenPairs},
 		{"Naked Triple", s.findNakedTriples},
-		{"X-Wing", s.findXWings},
+		{"Hidden Pair", s.findHiddenPairs},
 		{"Hidden Triple", s.findHiddenTriples},
 		{"Naked Quadruple", s.findNakedQuadruples},
-		{"XY-Wing", s.findXYWings},
-		{"Avoidable Rectangle", s.findAvoidableRectangles},
-		{"XYZ-Wing", s.findXYZWings},
 		{"Hidden Quadruple", s.findHiddenQuadruples},
-		{"Unique Rectangle", s.findUniqueRectangles},
-		{"Hidden Rectangle", nil},
-		{"Pointing Rectangle", nil},
+		{"X-Wing", s.findXWings},
 		{"Swordfish", s.findSwordfish},
 		{"Jellyfish", s.findJellyfish},
+		{"Remote Pair", nil},
+		{"BUG+1", nil},
 		{"Skyscraper", s.findSkyscraper},
 		{"2-String Kite", s.findTwoStringKite},
 		{"Empty Rectangle", nil},
-		{"Color Chain", nil},
+		{"W-Wing", nil},
+		{"XY-Wing", s.findXYWings},
+		{"XYZ-Wing", s.findXYZWings},
+		{"Avoidable Rectangle", s.findAvoidableRectangles},
+		{"Unique Rectangle Type 1", s.findUniqueRectangleType1},
+		{"Unique Rectangle Type 2", nil},
+		{"Unique Rectangle Type 3", nil},
+		{"Unique Rectangle Type 4", nil},
+		{"Hidden Rectangle", nil},
 		{"Finned X-Wing", nil},
 		{"Finned Swordfish", nil},
 		{"Finned Jellyfish", nil},
+		{"Sue de Coq", nil},
+		{"Simple Coloring", nil},
+		{"Multi-Coloring", nil},
+		{"X-Chain", nil},
+		{"XY-Chain", nil},
 		{"Brute Force", nil}, // custom check as last resort
 	}
 }
@@ -210,7 +228,7 @@ func (s *Solver) eliminateFromOtherLocsMulti(
 	return updated
 }
 
-func (s *Solver) findLockedCandidates() (found bool) {
+func (s *Solver) findClaimingTuples() (found bool) {
 	for i := range 9 {
 		// We only need to check rows and columns for Locked Candidates.
 		if s.checkLockedCandidatesForLine(s.rows[i]) ||
@@ -240,7 +258,7 @@ func (s *Solver) checkLockedCandidatesForLine(line *House) (found bool) {
 				return index
 			})
 			locSet := bitset.FromValues16(boxCells...)
-			step := NewStep(kindLockedCandidate)
+			step := NewStep(kindLockedCandidatesClaiming)
 			if s.eliminateFromOtherLocs(s.boxes[box], valueSet, locSet, step) {
 				s.applyStep(step.
 					WithValues(val).
@@ -272,7 +290,7 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 	})
 
 	for val, locs := range candidates {
-		step := NewStep(kindPointingTuple).
+		step := NewStep(kindLockedCandidatesPointing).
 			WithValues(val).
 			WithHouse(box)
 		valueSet := bitset.FromValues16(val)
@@ -1161,7 +1179,7 @@ func (s *Solver) checkTwoStringKite(val int, row, col *House) (found bool) {
 
 // UNIQUENESS TECHNIQUES
 
-func (s *Solver) findUniqueRectangles() (found bool) {
+func (s *Solver) findUniqueRectangleType1() (found bool) {
 	b := s.puzzle
 	// Check each cell with exactly 2 candidate values to see if it is the base
 	// corner of a unique rectangle.
@@ -1225,7 +1243,7 @@ func (s *Solver) checkUniqueRectangleForCell(base *puzzle.Cell) (found bool) {
 		// These cells form a unique rectangle, so we can eliminate their candidates
 		// from the cell at the 4th corner of the rectangle, which will have the
 		// same row as the column-wing and the same column as the row-wing.
-		step := NewStep(kindUniqueRectangle)
+		step := NewStep(kindUniqueRectangle1)
 		if s.eliminateValuesFromCell(colWing.Row, rowWing.Col, base.Candidates, step) {
 			s.applyStep(step.
 				WithValues(base.Candidates.Values()...).
