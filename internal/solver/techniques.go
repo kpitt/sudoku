@@ -994,10 +994,14 @@ func (s *Solver) checkSkyscraper(baseLines []*House) (found bool) {
 				top1 := base1.Cells[top1Loc]
 				top2 := base2.Cells[top2Loc]
 
+				// The "floor" cells are the shared base cells.
+				floor1 := base1.Cells[commonLoc]
+				floor2 := base2.Cells[commonLoc]
+
 				// Try to eliminate candidates from any cell that sees both tops.
-				step := NewStep(kindSkyscraper).WithValues(val).WithBases(base1, base2)
+				step := NewStep(kindSkyscraper).WithValues(val)
 				if s.eliminatePeerTargets(val, top1, top2, step) {
-					s.applyStep(step.WithCells(top1, top2))
+					s.applyStep(step.WithCells(top1, top2, floor1, floor2))
 					return true
 				}
 			}

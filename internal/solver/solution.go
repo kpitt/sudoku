@@ -132,9 +132,11 @@ func (s *Solver) getStepDescription(step *SolutionStep) string {
 
 		return step.formatUniqueRectangle()
 
+	case kindSkyscraper, kindTwoStringKite:
+		return step.formatSkyscraperOrKite()
 	case kindEmptyRectangle:
-	case kindSkyscraper:
-	case kindTwoStringKite:
+		// TODO: not implemented yet
+		break
 	case kindColorChain:
 		// TODO: not implemented yet
 		break
@@ -215,6 +217,13 @@ func (step *SolutionStep) formatXYZWing() string {
 		step.formatValuesWing(), step.formatIndices())
 }
 
+func (step *SolutionStep) formatSkyscraperOrKite() string {
+	// The "tail" cells are in indices 0 and 1, and the connector cells are
+	// in indices 2 and 3.
+	return step.formatElimination("%d in %s (connected by %s)", step.values[0],
+		step.formatIndexRange(0, 1), step.formatIndexRange(2, 3))
+}
+
 func (step *SolutionStep) formatUniqueRectangle() string {
 	return step.formatElimination("%s in %s",
 		step.formatValuesWing(), step.formatRectIndices())
@@ -253,10 +262,17 @@ func (step *SolutionStep) formatValuesWing() string {
 	return formatDigitsSeparated(step.values, '/')
 }
 
-// formatIndices formats all indices of the step as a compact cell-reference
+// formatIndices formats all indices for the step as a compact cell-reference
 // string, e.g. "r1c12,r3c1".
 func (step *SolutionStep) formatIndices() string {
 	return formatCellsCompact(step.indices)
+}
+
+// formatIndexRange formats a range of indices for the step as a compact
+// cell-reference string, e.g. "r1c12,r3c1".  The range is inclusive of
+// both endpoints.
+func (step *SolutionStep) formatIndexRange(begin, end int) string {
+	return formatCellsCompact(step.indices[begin : end+1])
 }
 
 // formatRectIndices formats the indices of the step as a condensed rectangle
