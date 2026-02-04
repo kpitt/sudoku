@@ -340,14 +340,18 @@ func formatRectCompact(cells []int) string {
 	r2, c2 := rowColFromIndex(cells[1])
 	r3, c3 := rowColFromIndex(cells[2])
 	// Make sure r1 < r2 and c1 < c2.
-	if r1 == r2 {
+	if r1 > r2 {
+		r1, r2 = r2, r1
+	} else if r1 == r2 {
 		if r2 < r3 {
 			r2 = r3
 		} else {
 			r1 = r3
 		}
 	}
-	if c1 == c2 {
+	if c1 > c2 {
+		c1, c2 = c2, c1
+	} else if c1 == c2 {
 		if c2 < c3 {
 			c2 = c3
 		} else {
