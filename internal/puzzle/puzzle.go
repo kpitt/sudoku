@@ -2,6 +2,8 @@ package puzzle
 
 import (
 	"fmt"
+
+	"github.com/kpitt/sudoku/internal/bitset"
 )
 
 type Puzzle struct {
@@ -73,42 +75,42 @@ func (p *Puzzle) ValidateSolution() error {
 
 	// Check row constraints
 	for r := range 9 {
-		seen := make(map[int]bool)
+		var seen bitset.BitSet16
 		for c := range 9 {
 			val := p.Grid[r][c].Value()
 			if val < 1 || val > 9 {
 				return fmt.Errorf("invalid value %d in cell r%dc%d", val, r+1, c+1)
 			}
-			if seen[val] {
+			if seen.Contains(val) {
 				return fmt.Errorf("duplicate value %d in row %d", val, r+1)
 			}
-			seen[val] = true
+			seen.Add(val)
 		}
 	}
 
 	// Check column constraints
 	for c := range 9 {
-		seen := make(map[int]bool)
+		var seen bitset.BitSet16
 		for r := range 9 {
 			val := p.Grid[r][c].Value()
-			if seen[val] {
+			if seen.Contains(val) {
 				return fmt.Errorf("duplicate value %d in column %d", val, c+1)
 			}
-			seen[val] = true
+			seen.Add(val)
 		}
 	}
 
 	// Check box constraints
 	for box := range 9 {
-		seen := make(map[int]bool)
+		var seen bitset.BitSet16
 		boxRow, boxCol := box/3, box%3
 		for i := range 9 {
 			r, c := boxRow*3+i/3, boxCol*3+i%3
 			val := p.Grid[r][c].Value()
-			if seen[val] {
+			if seen.Contains(val) {
 				return fmt.Errorf("duplicate value %d in box %d", val, box+1)
 			}
-			seen[val] = true
+			seen.Add(val)
 		}
 	}
 

@@ -106,3 +106,42 @@ func Union(sets ...BitSet16) BitSet16 {
 	}
 	return u
 }
+
+// Intersection returns a new set containing elements common to both sets.
+func (s BitSet16) Intersection(other BitSet16) BitSet16 {
+	return s & other
+}
+
+// Difference returns a new set containing elements in s that are not in other.
+func (s BitSet16) Difference(other BitSet16) BitSet16 {
+	return s &^ other
+}
+
+// Intersects returns true if the sets share at least one element.
+func (s BitSet16) Intersects(other BitSet16) bool {
+	return s&other != 0
+}
+
+// IsSubsetOf returns true if all elements of s are also in other.
+func (s BitSet16) IsSubsetOf(other BitSet16) bool {
+	return s&other == s
+}
+
+// String returns a string representation of the set, e.g. "{1, 5, 9}".
+func (s BitSet16) String() string {
+	b := []byte{'{'}
+	first := true
+	for val := range s.All() {
+		if !first {
+			b = append(b, ',', ' ')
+		}
+		// Appending small integers: handling 1 or 2 digits (max 16)
+		if val >= 10 {
+			b = append(b, byte('0'+val/10))
+		}
+		b = append(b, byte('0'+val%10))
+		first = false
+	}
+	b = append(b, '}')
+	return string(b)
+}
