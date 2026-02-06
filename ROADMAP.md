@@ -76,7 +76,7 @@ classified by human difficulty.
 
 ### Phase 1: Data Structures
 
-- [ ] **Bitmask Candidates**: Replace `set.Set[int]` with `uint16` bitmasks (O(1) operations).
+- [x] **Bitmask Candidates**: Replace `set.Set[int]` with `uint16` bitmasks (O(1) operations).
 - [ ] **Flattened Board**: Replace `[9][9]*Cell` with `[81]Cell` (contiguous memory, cache locality).
 - [ ] **Zero-Allocation**: Remove heap allocations for `ValSet`, `LocSet` and `LocValMap`.
 

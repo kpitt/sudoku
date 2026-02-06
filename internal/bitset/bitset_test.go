@@ -103,3 +103,56 @@ func TestUnion(t *testing.T) {
 		t.Errorf("Union (function) modified original sets")
 	}
 }
+
+func TestIntersection(t *testing.T) {
+	s1 := FromValues16(1, 2)
+	s3 := FromValues16(2, 4, 6)
+	common := FromValues16(2)
+
+	if i := s1.Intersection(s3); !i.Equal(common) {
+		t.Errorf("Intersection = %s; want %s", i.String(), common.String())
+	}
+}
+
+func TestDifference(t *testing.T) {
+	s1 := FromValues16(1, 2)
+	common := FromValues16(2)
+	diff := FromValues16(1)
+
+	if d := s1.Difference(common); !d.Equal(diff) {
+		t.Errorf("Difference = %s; want %s", d.String(), diff.String())
+	}
+}
+
+func TestIntersects(t *testing.T) {
+	s1 := FromValues16(1, 2)
+	s3 := FromValues16(2, 4, 6)
+
+	if !s1.Intersects(s3) {
+		t.Errorf("Expected s1 and s3 to intersect")
+	}
+	if s1.Intersects(FromValues16(4, 5)) {
+		t.Errorf("Expected s1 and {4,5} NOT to intersect")
+	}
+}
+
+func TestIsSubsetOf(t *testing.T) {
+	small := FromValues16(1, 2)
+	large := FromValues16(1, 2, 3)
+
+	if !small.IsSubsetOf(large) {
+		t.Errorf("Expected small to be subset of large")
+	}
+	if large.IsSubsetOf(small) {
+		t.Errorf("Expected large NOT to be subset of small")
+	}
+}
+
+func TestString(t *testing.T) {
+	s1 := FromValues16(1, 2)
+	str := s1.String()
+	// {01, 02}
+	if str != "{1, 2}" {
+		t.Errorf("String() = %q; want \"{1, 2}\"", str)
+	}
+}

@@ -198,11 +198,16 @@ func (s *Solver) eliminateFromOtherLocs(
 			continue
 		}
 		c := h.Cells[l]
-		for _, v := range values.Values() {
-			if c.HasCandidate(v) {
-				step.DeleteCandidate(c.Row, c.Col, v)
-				found = true
-			}
+
+		// Check for intersection first to avoid inner loop/allocations.
+		common := c.Candidates.Intersection(values)
+		if common.Empty() {
+			continue
+		}
+
+		for v := range common.All() {
+			step.DeleteCandidate(c.Row, c.Col, v)
+			found = true
 		}
 	}
 
@@ -357,13 +362,18 @@ func (s *Solver) eliminateOtherValues(
 	h *House, values ValSet, locs LocSet, step *SolutionStep,
 ) bool {
 	found := false
-	for _, l := range locs.Values() {
+	for l := range locs.All() {
 		c := h.Cells[l]
-		for _, v := range c.CandidateValues() {
-			if !values.Contains(v) {
-				step.DeleteCandidate(c.Row, c.Col, v)
-				found = true
-			}
+
+		// We want to remove any candidates in `c` that are NOT in `values`.
+		toRemove := c.Candidates.Difference(values)
+		if toRemove.Empty() {
+			continue
+		}
+
+		for v := range toRemove.All() {
+			step.DeleteCandidate(c.Row, c.Col, v)
+			found = true
 		}
 	}
 
@@ -559,17 +569,21 @@ func (s *Solver) checkXYWingsForPivot(
 	// Check each of the x-cells against each of the y-cells to see if they share
 	// a common 3rd value z.
 	for _, xc := range xCells {
-		cellVals := xc.CandidateValues()
-		// Set z to the non-x value in the candidate cell.
-		z := cellVals[0]
-		if z == x {
-			z = cellVals[1]
-		}
 		// Look for a y-cell that also contains z and is not visible from the x-cell.
 		for _, yc := range yCells {
-			if !yc.HasCandidate(z) || seesCell(xc, yc) {
+			if seesCell(xc, yc) {
 				continue
 			}
+
+			// The intersection of {x, z} and {y, z} must be {z}.
+			// Since x != y, any intersection is the common value z.
+			common := xc.Candidates.Intersection(yc.Candidates)
+			if common.Empty() {
+				// No common candidate, not an XY-Wing
+				continue
+			}
+
+			z := common.Value()
 			step := NewStep(kindXYWing)
 			if s.eliminateXYWingCells(z, xc, yc, step) {
 				s.applyStep(step.
@@ -660,18 +674,15 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 	}
 
 	for _, xzCell := range xzCells {
-		// Find the y value that does not appear in the xz-cell candidate.
-		var y int
-		for _, val := range pivot.CandidateValues() {
-			if !xzCell.HasCandidate(val) {
-				y = val
-				break
-			}
-		}
+		// Find the y value (pivot - xzCell).
+		// Pivot::{x,y,z}, xzCell::{x,z} => Difference::{y}
+		ySet := pivot.Candidates.Difference(xzCell.Candidates)
+		if ySet.Empty() {
+			continue
+		} // Should not happen if xzCell is valid subset
+		y := ySet.Value()
 
-		// Now find a cell in the same row or column as the pivot cell that has
-		// exactly 2 candidate values, where one candidate is y and the other
-		// is one of the candidates in xzCell.
+		// Now find a cell in the same row or column as the pivot cell.
 		isYZCandidate := func(cell *puzzle.Cell) bool {
 			if cell.Box() == pivot.Box() ||
 				cell.NumCandidates() != 2 ||
@@ -679,12 +690,11 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 
 				return false
 			}
-			for _, val := range cell.CandidateValues() {
-				if val != y && !xzCell.HasCandidate(val) {
-					return false
-				}
-			}
-			return true
+
+			// Verify it shares Z with xzCell
+			// yzCell::{y,z}, xzCell::{x,z} => Intersection::{z}
+			// (Assuming x != y, which is true)
+			return cell.Candidates.Intersects(xzCell.Candidates)
 		}
 
 		yzCells := slices.Concat(
@@ -713,13 +723,11 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 // yzCell cannot see each other, and that xzCell is in the same box as xyzCell.
 func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, step *SolutionStep) bool {
 	// The z value is the only common candidate between xzCell and yzCell.
-	var z int
-	for _, val := range xzCell.CandidateValues() {
-		if yzCell.HasCandidate(val) {
-			z = val
-			break
-		}
+	zSet := xzCell.Candidates.Intersection(yzCell.Candidates)
+	if zSet.Empty() {
+		return false
 	}
+	z := zSet.Value()
 
 	// The only cells that could possibly see all three XYZ-Wing cells are the
 	// other cells in the same box as xyzCell and xzCell, so we just need to
