@@ -13,7 +13,7 @@ func TestNewPuzzle(t *testing.T) {
 	if p.IsSolved() {
 		t.Error("New puzzle should not be solved")
 	}
-	
+
 	// Check initial cell state
 	for r := 0; r < 9; r++ {
 		for c := 0; c < 9; c++ {
@@ -30,13 +30,13 @@ func TestNewPuzzle(t *testing.T) {
 
 func TestPlaceValue(t *testing.T) {
 	p := NewPuzzle()
-	
+
 	// Place 5 at (0,0)
 	success := p.PlaceValue(0, 0, 5)
 	if !success {
 		t.Error("PlaceValue failed for valid move")
 	}
-	
+
 	c := p.Grid[0][0]
 	if !c.IsSolved() || c.Value() != 5 {
 		t.Error("Cell value not set correctly")
@@ -49,7 +49,7 @@ func TestPlaceValue(t *testing.T) {
 	if p.Grid[0][1].HasCandidate(5) {
 		t.Error("Row peer should verify candidate 5 removed")
 	}
-	
+
 	// Check col peer (1, 0)
 	if p.Grid[1][0].HasCandidate(5) {
 		t.Error("Col peer should verify candidate 5 removed")
@@ -87,23 +87,23 @@ func TestPlaceValue_AlreadySolved(t *testing.T) {
 
 func TestValidateSolution(t *testing.T) {
 	p := NewPuzzle()
-	
+
 	// Empty puzzle is invalid solution
 	if err := p.ValidateSolution(); err == nil {
 		t.Error("Empty puzzle should not be a valid solution")
 	}
-	
+
 	// Partially filled with conflict
 	p.PlaceValue(0, 0, 5)
 	p.PlaceValue(0, 1, 5) // Row conflict (though PlaceValue removes candidate, let's force check logic if we could)
-	
-	// Note: PlaceValue removes candidates, so it prevents us from easily creating an invalid state 
+
+	// Note: PlaceValue removes candidates, so it prevents us from easily creating an invalid state
 	// via standard methods unless we manipulate internals or ignore candidate checks (which PlaceValue doesn't enforce strictly on "Is valid move", it just does it).
 	// However, ValidateSolution checks for duplicates.
-	
+
 	// Let's manually inject a bad value to test ValidateSolution logic purely
 	p.Grid[0][2].value = 5 // Force a 3rd 5 in the row
-	
+
 	err := p.ValidateSolution()
 	if err == nil {
 		t.Error("Should detect duplicate in row")
@@ -118,7 +118,7 @@ func TestCell_Box(t *testing.T) {
 		{4, 4, 4},
 		{8, 0, 6}, {8, 8, 8},
 	}
-	
+
 	for _, tt := range tests {
 		c := NewCell(tt.r, tt.c)
 		if got := c.Box(); got != tt.expected {

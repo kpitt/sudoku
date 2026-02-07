@@ -209,7 +209,6 @@ func BenchmarkComparison(b *testing.B) {
 				b.Fatalf("Failed to load %s puzzle: %v", tc.name, err)
 			}
 
-			var totalChecks int64
 			b.ReportAllocs()
 
 			for b.Loop() {
@@ -218,13 +217,7 @@ func BenchmarkComparison(b *testing.B) {
 
 				solver := NewSolver(puzzleCopy, opts)
 				solver.Solve()
-
-				totalChecks += int64(solver.NumChecks)
 			}
-
-			// Report average number of technique checks per solve
-			avgChecks := float64(totalChecks) / float64(b.N)
-			b.ReportMetric(avgChecks, "checks/op")
 		})
 	}
 }
@@ -242,7 +235,6 @@ func BenchmarkBruteForce(b *testing.B) {
 				b.Fatalf("Failed to load %s puzzle: %v", tc.name, err)
 			}
 
-			var totalChecks int64
 			b.ReportAllocs()
 
 			for b.Loop() {
@@ -251,13 +243,7 @@ func BenchmarkBruteForce(b *testing.B) {
 
 				solver := NewSolver(puzzleCopy, opts)
 				solver.Solve()
-
-				totalChecks += int64(solver.NumChecks)
 			}
-
-			// Report average number of technique checks per solve
-			avgChecks := float64(totalChecks) / float64(b.N)
-			b.ReportMetric(avgChecks, "checks/op")
 		})
 	}
 }

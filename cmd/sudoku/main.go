@@ -35,15 +35,13 @@ func main() {
 	s.Solve()
 
 	if p.IsSolved() {
-		fmt.Printf("%s (%v, %d checks)\n\n",
-			color.HiGreenString("✓ Solved successfully"),
-			s.SolveTime, s.NumChecks)
+		fmt.Printf("%s (%v)\n\n",
+			color.HiGreenString("✓ Solved successfully"), s.SolveTime)
 		color.HiBlue("Solution:")
 		p.Print()
 	} else {
-		fmt.Printf("%s (%v, %d checks)\n\n",
-			color.HiRedString("✗ Failed to solve"),
-			s.SolveTime, s.NumChecks)
+		fmt.Printf("%s (%v)\n\n",
+			color.HiRedString("✗ Failed to solve"), s.SolveTime)
 		color.HiBlue("Partial Solution:")
 		p.PrintCandidateGrid()
 		fmt.Println()
