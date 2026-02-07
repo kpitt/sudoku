@@ -44,10 +44,11 @@ type (
 // Convenient type aliases that give semantic meaning to commonly used maps
 // and sets.
 type (
-	LocSet    = bitset.BitSet16
-	ValSet    = bitset.BitSet16
-	LocValMap = map[int]ValSet
-	ValLocMap = map[int]*LocSet
+	LocSet = bitset.BitSet16
+	ValSet = bitset.BitSet16
+	// ValLocMap maps a value to the set of locations where it is a candidate.
+	// Index 0 is unused, indices 1-9 correspond to values 1-9.
+	ValLocMap = [10]LocSet
 )
 
 const (
@@ -164,14 +165,14 @@ func (s *Solver) eliminateCandidates(r, c int, val int) {
 	// Get the peer locations in the row, column, and box of cell (r,c) that
 	// contain val as a candidate.
 	row := s.rows[r]
-	peerCols := row.Locations(val)
+	peerCols := *row.Locations(val)
 	peerCols.Remove(c)
 	col := s.columns[c]
-	peerRows := col.Locations(val)
+	peerRows := *col.Locations(val)
 	peerRows.Remove(r)
 	boxNum, boxLoc := getBoxLoc(r, c)
 	box := s.boxes[boxNum]
-	peerBoxLocs := box.Locations(val)
+	peerBoxLocs := *box.Locations(val)
 	peerBoxLocs.Remove(boxLoc)
 
 	// Remove value from the cached candidates for the row, column, and box of

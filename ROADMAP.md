@@ -78,7 +78,7 @@ classified by human difficulty.
 
 - [x] **Bitmask Candidates**: Replace `set.Set[int]` with `uint16` bitmasks (O(1) operations).
 - [ ] **Flattened Board**: Replace `[9][9]*Cell` with `[81]Cell` (contiguous memory, cache locality).
-- [ ] **Zero-Allocation**: Remove heap allocations for `ValSet`, `LocSet` and `LocValMap`.
+- [x] **Zero-Allocation**: Remove heap allocations for `ValSet`, `LocSet` and `LocValMap`.
 
 ### Phase 2: Tables & Lookups
 

@@ -45,13 +45,11 @@ type UnsolvedFilter = func(int, LocSet) bool
 
 func NewHouse(kind houseKind, index int) *House {
 	h := &House{
-		Unsolved: make(ValLocMap),
-		Kind:     kind,
-		Index:    index,
+		Kind:  kind,
+		Index: index,
 	}
 	for i := range 9 {
-		s := bitset.BitSet16(allLocBits)
-		h.Unsolved[i+1] = &s
+		h.Unsolved[i+1] = bitset.BitSet16(allLocBits)
 	}
 	return h
 }
@@ -62,47 +60,46 @@ func (h *House) Name() string {
 
 // RemoveCandidateLoc removes loc from the candidate locations for value val.
 func (h *House) RemoveCandidateLoc(val int, loc int) {
-	if locs := h.Unsolved[val]; locs != nil {
-		locs.Remove(loc)
-	}
+	h.Unsolved[val].Remove(loc)
 }
 
 // RemoveCandidateValue removes all candidate locations that conflict with a
 // solved value of val in loc.
 func (h *House) RemoveCandidateValue(val int, loc int) {
 	// val is no longer an unsolved candidate for any cell in this house.
-	delete(h.Unsolved, val)
+	h.Unsolved[val].Clear()
 	// Location loc is solved, so no other value can be placed there.
-	for _, locs := range h.Unsolved {
-		locs.Remove(loc)
+	for i := 1; i <= 9; i++ {
+		h.Unsolved[i].Remove(loc)
 	}
 }
 
 func (h *House) NumUnsolved() int {
-	return len(h.Unsolved)
+	count := 0
+	for i := 1; i <= 9; i++ {
+		if !h.Unsolved[i].Empty() {
+			count++
+		}
+	}
+	return count
 }
 
 func (h *House) UnsolvedDigits() []int {
-	digits := make([]int, 0, len(h.Unsolved))
-	for k := range h.Unsolved {
-		digits = append(digits, k)
+	digits := make([]int, 0, 9)
+	for i := 1; i <= 9; i++ {
+		if !h.Unsolved[i].Empty() {
+			digits = append(digits, i)
+		}
 	}
 	return digits
 }
 
 func (h *House) NumLocations(val int) int {
-	if loc, ok := h.Unsolved[val]; ok {
-		return loc.Size()
-	}
-	return 0
+	return h.Unsolved[val].Size()
 }
 
 func (h *House) Locations(val int) *LocSet {
-	if loc, ok := h.Unsolved[val]; ok {
-		return loc
-	}
-	empty := bitset.BitSet16(0)
-	return &empty
+	return &h.Unsolved[val]
 }
 
 // sharedRow returns the row and true if all cells for the locations in locs
