@@ -130,7 +130,11 @@ func (s *Solver) findHiddenSingles() bool {
 }
 
 func (s *Solver) checkHiddenSinglesForHouse(h *House) bool {
-	for val, locs := range h.Unsolved {
+	for val := 1; val <= 9; val++ {
+		locs := h.Unsolved[val]
+		if locs.Empty() {
+			continue
+		}
 		if locs.Size() == 1 {
 			index := locs.Value()
 			cell := h.Cells[index]
@@ -149,23 +153,24 @@ func (s *Solver) findNakedPairs() (found bool) {
 }
 
 func (s *Solver) checkNakedPairsForHouse(h *House) (found bool) {
-	values := make(LocValMap)
-	// Collect a map of all locations with exactly 2 candidate values.
+	var locsBuf [9]int
+	locs := locsBuf[:0]
+	// Collect a list of all locations with exactly 2 candidate values.
 	for i, c := range h.Cells {
 		if c.NumCandidates() == 2 {
-			values[i] = c.Candidates
+			locs = append(locs, i)
 		}
 	}
-	if len(values) < 2 {
+	if len(locs) < 2 {
 		// We need at least 2 candidate values to have a pair.
 		return false
 	}
 
-	locs := mapKeys(values)
 	for i := 0; i < len(locs)-1; i++ {
 		for j := i + 1; j < len(locs); j++ {
 			a, b := locs[i], locs[j]
-			valueSet := bitset.Union(values[a], values[b])
+			valA, valB := h.Cells[a].Candidates, h.Cells[b].Candidates
+			valueSet := bitset.Union(valA, valB)
 			if valueSet.Size() != 2 {
 				// If the union of the location sets does not have exactly 2 elements, then
 				// this is not a naked pair.
@@ -241,15 +246,20 @@ func (s *Solver) findClaimingTuples() (found bool) {
 }
 
 func (s *Solver) checkLockedCandidatesForLine(line *House) (found bool) {
-	candidates := filterMap(line.Unsolved, func(_ int, l *LocSet) bool {
+	for val := 1; val <= 9; val++ {
+		locs := line.Unsolved[val]
+		if locs.Empty() {
+			continue
+		}
+
 		// If we have more than 3 candidates in a line, then they can't all be
 		// in the same box.
-		return l.Size() <= 3
-	})
+		if locs.Size() > 3 {
+			continue
+		}
 
-	for val, locs := range candidates {
 		valueSet := bitset.FromValues16(val)
-		if box, ok := line.sharedBox(*locs); ok {
+		if box, ok := line.sharedBox(locs); ok {
 			cells := line.cellsFromLocs(locs.Values())
 			boxCells := transformSlice(cells, func(c *puzzle.Cell) int {
 				_, index := getBoxLoc(c.Row, c.Col)
@@ -280,19 +290,24 @@ func (s *Solver) findPointingTuples() (found bool) {
 }
 
 func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
-	candidates := filterMap(box.Unsolved, func(_ int, l *LocSet) bool {
+	for val := 1; val <= 9; val++ {
+		locs := box.Unsolved[val]
+		if locs.Empty() {
+			continue
+		}
+
 		// If we have more than 3 candidates in a single box, then they can't all
 		// be in the same line.
-		return l.Size() <= 3
-	})
+		if locs.Size() > 3 {
+			continue
+		}
 
-	for val, locs := range candidates {
 		step := NewStep(kindLockedCandidatesPointing).
 			WithValues(val).
 			WithHouse(box)
 		valueSet := bitset.FromValues16(val)
 		cells := box.cellsFromLocs(locs.Values())
-		if row, ok := box.sharedRow(*locs); ok {
+		if row, ok := box.sharedRow(locs); ok {
 			cols := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Col
 			})
@@ -302,7 +317,7 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 				return true
 			}
 		}
-		if col, ok := box.sharedCol(*locs); ok {
+		if col, ok := box.sharedCol(locs); ok {
 			rows := transformSlice(cells, func(c *puzzle.Cell) int {
 				return c.Row
 			})
@@ -322,19 +337,28 @@ func (s *Solver) findHiddenPairs() (found bool) {
 }
 
 func (s *Solver) checkHiddenPairsForHouse(h *House) (found bool) {
-	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
-		return l.Size() == 2
-	})
-	if len(locs) < 2 {
+	var valBuf [9]int
+	values := valBuf[:0]
+	for val := 1; val <= 9; val++ {
+		locs := h.Unsolved[val]
+		if locs.Empty() {
+			continue
+		}
+		if locs.Size() == 2 {
+			values = append(values, val)
+		}
+	}
+
+	if len(values) < 2 {
 		// We need at least 2 candidate values to have a pair.
 		return false
 	}
 
-	values := mapKeys(locs)
 	for i := 0; i < len(values)-1; i++ {
 		for j := i + 1; j < len(values); j++ {
 			x, y := values[i], values[j]
-			locSet := bitset.Union(*locs[x], *locs[y])
+			locsX, locsY := h.Unsolved[x], h.Unsolved[y]
+			locSet := bitset.Union(locsX, locsY)
 			if locSet.Size() != 2 {
 				// If the union of the location sets does not have exactly 2 elements, then
 				// this is not a hidden pair.
@@ -385,24 +409,26 @@ func (s *Solver) findNakedTriples() (found bool) {
 }
 
 func (s *Solver) checkNakedTriplesForHouse(h *House) (found bool) {
-	values := make(LocValMap)
+	// Take a slice over a fixed array to avoid heap allocations.
+	var locsBuf [9]int
+	locs := locsBuf[:0]
 	for i, c := range h.Cells {
-		// Collect a map of all locations with either 2 or 3 candidate values.
+		// Collect a list of all locations with either 2 or 3 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 {
-			values[i] = c.Candidates
+			locs = append(locs, i)
 		}
 	}
-	if len(values) < 3 {
+	if len(locs) < 3 {
 		// We need at least 3 candidate values to have a triple.
 		return false
 	}
 
-	locs := mapKeys(values)
 	for i := 0; i < len(locs)-2; i++ {
 		for j := i + 1; j < len(locs)-1; j++ {
 			for k := j + 1; k < len(locs); k++ {
 				a, b, c := locs[i], locs[j], locs[k]
-				valueSet := bitset.Union(values[a], values[b], values[c])
+				valA, valB, valC := h.Cells[a].Candidates, h.Cells[b].Candidates, h.Cells[c].Candidates
+				valueSet := bitset.Union(valA, valB, valC)
 				if valueSet.Size() != 3 {
 					// If the union of the location sets does not have exactly 3 elements, then
 					// this is not a naked triple.
@@ -430,20 +456,29 @@ func (s *Solver) findHiddenTriples() (found bool) {
 }
 
 func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
-	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
-		return l.Size() == 2 || l.Size() == 3
-	})
-	if len(locs) < 3 {
+	var valBuf [9]int
+	values := valBuf[:0]
+	for val := 1; val <= 9; val++ {
+		locs := h.Unsolved[val]
+		if locs.Empty() {
+			continue
+		}
+		if locs.Size() == 2 || locs.Size() == 3 {
+			values = append(values, val)
+		}
+	}
+
+	if len(values) < 3 {
 		// We need at least 3 candidate values to have a triple.
 		return false
 	}
 
-	values := mapKeys(locs)
 	for i := 0; i < len(values)-2; i++ {
 		for j := i + 1; j < len(values)-1; j++ {
 			for k := j + 1; k < len(values); k++ {
 				x, y, z := values[i], values[j], values[k]
-				locSet := bitset.Union(*locs[x], *locs[y], *locs[z])
+				locsX, locsY, locsZ := h.Unsolved[x], h.Unsolved[y], h.Unsolved[z]
+				locSet := bitset.Union(locsX, locsY, locsZ)
 				if locSet.Size() != 3 {
 					// If the union of the location sets does not have exactly 3 elements, then
 					// this is not a hidden triple.
@@ -471,25 +506,26 @@ func (s *Solver) findNakedQuadruples() (found bool) {
 }
 
 func (s *Solver) checkNakedQuadruplesForHouse(h *House) (found bool) {
-	values := make(LocValMap)
+	var locsBuf [9]int
+	locs := locsBuf[:0]
 	for i, c := range h.Cells {
-		// Collect a map of all locations with either 2, 3 or 4 candidate values.
+		// Collect a list of all locations with either 2, 3 or 4 candidate values.
 		if c.NumCandidates() == 2 || c.NumCandidates() == 3 || c.NumCandidates() == 4 {
-			values[i] = c.Candidates
+			locs = append(locs, i)
 		}
 	}
-	if len(values) < 4 {
+	if len(locs) < 4 {
 		// We need at least 4 candidate values to have a quadruple.
 		return false
 	}
 
-	locs := mapKeys(values)
 	for i := 0; i < len(locs)-3; i++ {
 		for j := i + 1; j < len(locs)-2; j++ {
 			for k := j + 1; k < len(locs)-1; k++ {
 				for n := k + 1; n < len(locs); n++ {
 					a, b, c, d := locs[i], locs[j], locs[k], locs[n]
-					valueSet := bitset.Union(values[a], values[b], values[c], values[d])
+					valA, valB, valC, valD := h.Cells[a].Candidates, h.Cells[b].Candidates, h.Cells[c].Candidates, h.Cells[d].Candidates
+					valueSet := bitset.Union(valA, valB, valC, valD)
 					if valueSet.Size() != 4 {
 						// If the union of the location sets does not have exactly 4 elements, then
 						// this is not a naked quadruple.
@@ -606,7 +642,8 @@ func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell, step *So
 	removeZs := func(h *House) bool {
 		// Find candidate locations for value z in house h, which is assumed to
 		// be a house that contains xCell.
-		if locs, ok := h.Unsolved[z]; ok {
+		locs := h.Unsolved[z]
+		if !locs.Empty() {
 			// Select only the cells that also see yCell.
 			cells := h.cellsFromLocs(locs.Values())
 			cells = filterSlice(cells, seesYCell)
@@ -757,21 +794,30 @@ func (s *Solver) findHiddenQuadruples() (found bool) {
 }
 
 func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (found bool) {
-	locs := filterMap(h.Unsolved, func(_ int, l *LocSet) bool {
-		return l.Size() == 2 || l.Size() == 3 || l.Size() == 4
-	})
-	if len(locs) < 4 {
+	var valBuf [9]int
+	values := valBuf[:0]
+	for val := 1; val <= 9; val++ {
+		locs := h.Unsolved[val]
+		if locs.Empty() {
+			continue
+		}
+		if locs.Size() == 2 || locs.Size() == 3 || locs.Size() == 4 {
+			values = append(values, val)
+		}
+	}
+
+	if len(values) < 4 {
 		// We need at least 4 candidate values to have a quadruple.
 		return false
 	}
 
-	values := mapKeys(locs)
 	for i := 0; i < len(values)-3; i++ {
 		for j := i + 1; j < len(values)-2; j++ {
 			for k := j + 1; k < len(values)-1; k++ {
 				for n := k + 1; n < len(values); n++ {
 					w, x, y, z := values[i], values[j], values[k], values[n]
-					locSet := bitset.Union(*locs[w], *locs[x], *locs[y], *locs[z])
+					locsW, locsX, locsY, locsZ := h.Unsolved[w], h.Unsolved[x], h.Unsolved[y], h.Unsolved[z]
+					locSet := bitset.Union(locsW, locsX, locsY, locsZ)
 					if locSet.Size() != 4 {
 						// If the union of the location sets does not have exactly 4 elements, then
 						// this is not a hidden quadruple.
@@ -822,7 +868,12 @@ func (s *Solver) findFishInLines(
 	baseLines, coverLines []*House,
 ) (found bool) {
 	for _, base := range baseLines {
-		for val, locs := range base.Unsolved {
+		for val := 1; val <= 9; val++ {
+			locs := base.Unsolved[val]
+			if locs.Empty() {
+				continue
+			}
+
 			// A fish line must have no more than fishSize candidate locations
 			// for a value. We assume that all singles and smaller fish have
 			// already been found.
@@ -862,7 +913,7 @@ func (s *Solver) checkFishForValue(
 	var checkLines func(lines []*House, fishLocs LocSet) bool
 	checkLines = func(lines []*House, fishLocs LocSet) bool {
 		for i, line := range lines {
-			locs := bitset.Union(fishLocs, *line.Unsolved[val])
+			locs := bitset.Union(fishLocs, line.Unsolved[val])
 			if locs.Size() > fishSize {
 				// Too many locations, so this line can't be part of the fish.
 				continue
@@ -887,7 +938,7 @@ func (s *Solver) checkFishForValue(
 	}
 
 	step := NewStep(fishKind).WithValues(val)
-	if checkLines(candidates, *base1.Unsolved[val]) {
+	if checkLines(candidates, base1.Unsolved[val]) {
 		// We found a fish.
 		bases := transformSlice(fishLines, func(x int) *House {
 			return baseLines[x]
