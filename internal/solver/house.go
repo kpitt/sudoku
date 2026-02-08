@@ -146,3 +146,9 @@ func (h *House) cellsFromLocs(locs []int) []*puzzle.Cell {
 		return h.Cells[l]
 	})
 }
+
+func (h *House) indexesFromLocs(locs []int) []int {
+	return transformSlice(locs, func(l int) int {
+		return h.Cells[l].Index()
+	})
+}

@@ -12,8 +12,8 @@ type Cell struct {
 	Candidates bitset.BitSet16
 }
 
-func NewCell(r, c int) *Cell {
-	return &Cell{
+func NewCell(r, c int) Cell {
+	return Cell{
 		Row: r, Col: c,
 		Candidates: bitset.BitSet16(allDigitBits),
 	}
@@ -22,6 +22,10 @@ func NewCell(r, c int) *Cell {
 // IsSolved returns true if a solved value has been placed in this cell.
 func (c *Cell) IsSolved() bool {
 	return c.value > 0
+}
+
+func (c *Cell) Index() int {
+	return c.Row*9 + c.Col
 }
 
 func (c *Cell) Value() int {
@@ -63,10 +67,4 @@ func (c *Cell) RemoveCandidate(val int) {
 // and box 8 at the bottom-right.
 func (c *Cell) Box() int {
 	return c.Row/3*3 + c.Col/3
-}
-
-// SameCell returns true if other refers to the same cell location as this
-// cell (i.e. both cells have the same row and column).
-func (c *Cell) SameCell(other *Cell) bool {
-	return c.Row == other.Row && c.Col == other.Col
 }

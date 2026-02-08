@@ -81,12 +81,12 @@ func FromString(s string) (*Puzzle, error) {
 			// A '0' or '.' is an empty cell, so just advance the index without
 			// placing a given.
 			if c >= '1' && c <= '9' {
-				row, col := i/9, i%9
 				val := int(c - '0')
-				if !p.Grid[row][col].HasCandidate(val) {
-					return nil, errPuzzleState("given value %d is not a candidate for r%dc%d", val, row+1, col+1)
+				if !p.Cell(i).HasCandidate(val) {
+					return nil, errPuzzleState("given value %d is not a candidate for %s",
+						val, FormatCell(i))
 				}
-				p.GivenValue(row, col, val)
+				p.GivenValue(i, val)
 			}
 			i++
 		}
@@ -103,16 +103,4 @@ func FromString(s string) (*Puzzle, error) {
 	}
 
 	return p, nil
-}
-
-func FromArray(grid [][]int) *Puzzle {
-	b := NewPuzzle()
-	for r := range 9 {
-		for c := range 9 {
-			if grid[r][c] != 0 {
-				b.GivenValue(r, c, grid[r][c])
-			}
-		}
-	}
-	return b
 }
