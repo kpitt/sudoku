@@ -101,8 +101,8 @@ func (dl *DancingLinks) searchWithStats(stats *DancingLinksStats, options *Danci
 
 		if options.EnableDebug {
 			if can, ok := dl.candidates[r.RowID]; ok {
-				r, c, val := can.GetValues()
-				printDebug("Backtracking: no solution for R%dC%d#%d", r+1, c+1, val)
+				r, c := rowColFromIndex(can.Index)
+				printDebug("Backtracking: no solution for R%dC%d#%d", r+1, c+1, can.Value)
 			}
 		}
 		dl.solution = dl.solution[:len(dl.solution)-1]

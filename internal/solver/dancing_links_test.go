@@ -27,8 +27,9 @@ func TestDancingLinksBasic(t *testing.T) {
 	givenCount := 0
 	for r := range 9 {
 		for c := range 9 {
+			// TODO: r,c or index?
 			if testPuzzle[r][c] != 0 {
-				b.Grid[r][c].GivenValue(testPuzzle[r][c])
+				b.Get(r, c).GivenValue(testPuzzle[r][c])
 				givenCount++
 			}
 		}
@@ -86,7 +87,7 @@ func TestDancingLinksNodeCreation(t *testing.T) {
 	p := puzzle.NewPuzzle()
 
 	// Set a single value to test node creation
-	p.Grid[0][0].PlaceValue(5)
+	p.PlaceValue(0, 5)
 
 	dl := NewDancingLinks(p)
 
@@ -147,8 +148,8 @@ func TestDancingLinksChooseColumn(t *testing.T) {
 	p := puzzle.NewPuzzle()
 
 	// Create a puzzle with some constraints to make column sizes different
-	p.Grid[0][0].PlaceValue(1)
-	p.Grid[0][1].PlaceValue(2)
+	p.PlaceValue(0, 1)
+	p.PlaceValue(9, 2)
 
 	dl := NewDancingLinks(p)
 
@@ -183,22 +184,20 @@ func TestDancingLinksFullyConstrainedPuzzle(t *testing.T) {
 	p := puzzle.NewPuzzle()
 
 	// Fill with a valid solution
-	solution := [][]int{
-		{5, 3, 4, 6, 7, 8, 9, 1, 2},
-		{6, 7, 2, 1, 9, 5, 3, 4, 8},
-		{1, 9, 8, 3, 4, 2, 5, 6, 7},
-		{8, 5, 9, 7, 6, 1, 4, 2, 3},
-		{4, 2, 6, 8, 5, 3, 7, 9, 1},
-		{7, 1, 3, 9, 2, 4, 8, 5, 6},
-		{9, 6, 1, 5, 3, 7, 2, 8, 4},
-		{2, 8, 7, 4, 1, 9, 6, 3, 5},
-		{3, 4, 5, 2, 8, 6, 1, 7, 9},
+	solution := [81]int{
+		5, 3, 4, 6, 7, 8, 9, 1, 2,
+		6, 7, 2, 1, 9, 5, 3, 4, 8,
+		1, 9, 8, 3, 4, 2, 5, 6, 7,
+		8, 5, 9, 7, 6, 1, 4, 2, 3,
+		4, 2, 6, 8, 5, 3, 7, 9, 1,
+		7, 1, 3, 9, 2, 4, 8, 5, 6,
+		9, 6, 1, 5, 3, 7, 2, 8, 4,
+		2, 8, 7, 4, 1, 9, 6, 3, 5,
+		3, 4, 5, 2, 8, 6, 1, 7, 9,
 	}
 
-	for r := range 9 {
-		for c := range 9 {
-			p.Grid[r][c].PlaceValue(solution[r][c])
-		}
+	for idx := range 81 {
+		p.PlaceValue(idx, solution[idx])
 	}
 
 	dl := NewDancingLinks(p)

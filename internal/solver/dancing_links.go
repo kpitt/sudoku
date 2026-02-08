@@ -81,7 +81,8 @@ func (dl *DancingLinks) buildMatrix() {
 
 	for r := range 9 {
 		for c := range 9 {
-			cell := dl.Puzzle.Grid[r][c]
+			// TODO: r,c or index?
+			cell := dl.Puzzle.Get(r, c)
 
 			if cell.IsSolved() {
 				// Cell is already solved, so get the constraint columns for the
@@ -287,7 +288,8 @@ func (dl *DancingLinks) GetSolution() []Candidate {
 // decodeRow extracts the row, column, and value from a row ID
 func (dl *DancingLinks) decodeRow(rowID int) (row, col int, val int) {
 	if c, ok := dl.candidates[rowID]; ok {
-		return c.GetValues()
+		idx := c.Index
+		return idx / 9, idx % 9, c.Value
 	}
 
 	return 0, 0, 0 // fallback

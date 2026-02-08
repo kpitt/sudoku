@@ -81,7 +81,7 @@ func NewSolver(p *puzzle.Puzzle, opts *Options) *Solver {
 	// Collect the cells that belong to each house.
 	for r := range 9 {
 		for c := range 9 {
-			cell := p.Grid[r][c]
+			cell := p.Get(r, c)
 			s.rows[r].Cells[c] = cell
 			s.columns[c].Cells[r] = cell
 			box, loc := getBoxLoc(r, c)
@@ -98,12 +98,10 @@ func NewSolver(p *puzzle.Puzzle, opts *Options) *Solver {
 func (s *Solver) processInitialValues() {
 	s.printProgress("Processing initial values")
 	b := s.puzzle
-	for r := range 9 {
-		for c := range 9 {
-			cell := b.Grid[r][c]
-			if cell.IsSolved() {
-				s.eliminateCandidates(r, c, cell.Value())
-			}
+	for i := range 81 {
+		cell := b.Cell(i)
+		if cell.IsSolved() {
+			s.eliminateCandidates(i, cell.Value())
 		}
 	}
 }
@@ -153,15 +151,16 @@ func (s *Solver) solveTimer(start time.Time) {
 	s.SolveTime = time.Since(start)
 }
 
-func (s *Solver) PlaceValue(r, c int, val int) {
-	if s.puzzle.PlaceValue(r, c, val) {
-		s.eliminateCandidates(r, c, val)
+func (s *Solver) PlaceValue(idx int, val int) {
+	if s.puzzle.PlaceValue(idx, val) {
+		s.eliminateCandidates(idx, val)
 	}
 }
 
 // eliminateCandidates removes val from all cached candidates for the row,
-// column, and box containing cell (r,c).
-func (s *Solver) eliminateCandidates(r, c int, val int) {
+// column, and box containing the cell at index idx.
+func (s *Solver) eliminateCandidates(idx int, val int) {
+	r, c := idx/9, idx%9
 	// Get the peer locations in the row, column, and box of cell (r,c) that
 	// contain val as a candidate.
 	row := s.rows[r]
@@ -183,26 +182,30 @@ func (s *Solver) eliminateCandidates(r, c int, val int) {
 
 	// Remove (r, c) as a candidate location for val in all peer cells.
 	for pc := range peerCols.All() {
-		s.removeCellCandidate(r, pc, val)
+		s.removeCellCandidate(r*9+pc, val)
 	}
 	for pr := range peerRows.All() {
-		s.removeCellCandidate(pr, c, val)
+		s.removeCellCandidate(pr*9+c, val)
 	}
 	br, bc := getBoxBase(r, c)
 	for pbl := range peerBoxLocs.All() {
-		rb, cb := br+pbl/3, bc+pbl%3
+		// box base row + pbl/3 => target row
+		// box base col + pbl%3 => target col
+		tr, tc := br+pbl/3, bc+pbl%3
 		// Don't reprocess cells which are in the same row or column that we've already processed.
-		if rb != r && cb != c {
-			s.removeCellCandidate(rb, cb, val)
+		if tr != r && tc != c {
+			s.removeCellCandidate(tr*9+tc, val)
 		}
 	}
 }
 
-func (s *Solver) removeCellCandidate(r, c int, val int) {
-	cell := s.puzzle.Grid[r][c]
+func (s *Solver) removeCellCandidate(idx int, val int) {
+	cell := s.puzzle.Cell(idx)
 
 	// Make sure val is removed from the candidates for this cell.
 	cell.RemoveCandidate(val)
+
+	r, c := idx/9, idx%9
 
 	// Also remove this cell from the cached locations for value.
 	s.rows[r].RemoveCandidateLoc(val, c)
@@ -216,7 +219,7 @@ func (s *Solver) removeCellCandidate(r, c int, val int) {
 	// over the entire puzzle grid at the start of each solver pass.
 	if cell.NumCandidates() == 1 {
 		step := NewStep(kindNakedSingle).
-			WithPlacedValue(r, c, cell.CandidateValues()[0])
+			WithPlacedValue(idx, cell.CandidateValues()[0])
 		s.applyStep(step)
 	}
 }
@@ -233,13 +236,11 @@ func (s *Solver) applyStep(step *SolutionStep) {
 	if step.IsSingle() {
 		// Place the value for this step in the puzzle grid.
 		index := step.indices[0]
-		r, c := rowColFromIndex(index)
-		s.PlaceValue(r, c, step.values[0])
+		s.PlaceValue(index, step.values[0])
 	} else {
 		// Apply the candidates eliminated by this step.
 		for _, dc := range step.deletedCandidates {
-			r, c := rowColFromIndex(dc.Index)
-			s.removeCellCandidate(r, c, dc.Value)
+			s.removeCellCandidate(dc.Index, dc.Value)
 		}
 	}
 }

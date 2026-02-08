@@ -12,18 +12,6 @@ func mapKeys[K comparable, V any](m map[K]V) []K {
 	return keys
 }
 
-func filterMap[K comparable, V any](
-	m map[K]V, filter func(K, V) bool,
-) map[K]V {
-	filtered := make(map[K]V)
-	for k, v := range m {
-		if filter(k, v) {
-			filtered[k] = v
-		}
-	}
-	return filtered
-}
-
 func filterSlice[T any](s []T, filter func(T) bool) []T {
 	var filtered []T
 	for _, v := range s {
@@ -60,7 +48,7 @@ func getBoxBase(r, c int) (rb, cb int) {
 func seesCell(a, b *puzzle.Cell) bool {
 	// Two cells can see each other if they have the same row, the same column,
 	// or the same box, and they are not the same cell.
-	return !a.SameCell(b) &&
+	return a.Index() != b.Index() &&
 		(a.Row == b.Row || a.Col == b.Col || a.Box() == b.Box())
 }
 

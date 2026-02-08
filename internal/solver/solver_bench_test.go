@@ -129,14 +129,12 @@ func copyPuzzle(original *puzzle.Puzzle) *puzzle.Puzzle {
 	newPuzzle := puzzle.NewPuzzle()
 
 	// Copy the grid state
-	for r := range 9 {
-		for c := range 9 {
-			originalCell := original.Grid[r][c]
+	for i := range 81 {
+		originalCell := original.Cell(i)
 
-			// Copy the given values
-			if originalCell.IsGiven {
-				newPuzzle.GivenValue(r, c, originalCell.Value())
-			}
+		// Copy the given values
+		if originalCell.IsGiven {
+			newPuzzle.GivenValue(i, originalCell.Value())
 		}
 	}
 

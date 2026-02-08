@@ -35,7 +35,7 @@ func (p *Puzzle) Print() {
 			if c == 3 || c == 6 {
 				fmt.Print("│ ")
 			}
-			cell := p.Grid[r][c]
+			cell := p.Get(r, c)
 			if cell.IsSolved() {
 				if cell.IsGiven {
 					givenColor.Printf("%d ", cell.Value())
@@ -68,7 +68,7 @@ func (p *Puzzle) PrintUnsolvedCounts() {
 
 func (p *Puzzle) PrintCandidateGrid() {
 	fmt.Println(borderTop)
-	for r, row := range p.Grid {
+	for r := range 9 {
 		if r != 0 {
 			if r%3 == 0 {
 				fmt.Println(dividerMajor)
@@ -76,26 +76,32 @@ func (p *Puzzle) PrintCandidateGrid() {
 				fmt.Println(dividerMinor)
 			}
 		}
-		printRow(row)
+		p.printRow(r)
 	}
 	fmt.Println(borderBot)
 	fmt.Printf("Legend: %s = Given, %s = Solved, %s = Candidate\n",
 		givenLegend, solvedLegend, unsolvedLegend)
 }
 
-func printRow(row [9]*Cell) {
+func FormatCell(index int) string {
+	r, c := index/9, index%9
+	return fmt.Sprintf("r%dc%d", r+1, c+1)
+}
+
+func (p *Puzzle) printRow(r int) {
 	for cr := range 3 {
-		printCandidateRow(row, cr)
+		p.printCandidateRow(r, cr)
 	}
 }
 
-func printCandidateRow(row [9]*Cell, candidateRow int) {
-	for c, cell := range row {
+func (p *Puzzle) printCandidateRow(r, candidateRow int) {
+	for c := range 9 {
 		if c != 0 && c%3 == 0 {
 			fmt.Print(edgeMajor)
 		} else {
 			fmt.Print(edgeMinor)
 		}
+		cell := p.Get(r, c)
 		if cell.IsSolved() {
 			if candidateRow == 1 {
 				if cell.IsGiven {

@@ -24,11 +24,11 @@ func TestFindSkyscraper(t *testing.T) {
 
 	// Helper to set candidate
 	setCandidate := func(r, c int) {
-		p.Grid[r][c].Candidates.Add(val)
+		p.Get(r, c).Candidates.Add(val)
 		s.rows[r].Unsolved[val].Add(c)
 		s.columns[c].Unsolved[val].Add(r)
 		_, boxLoc := getBoxLoc(r, c)
-		s.boxes[p.Grid[r][c].Box()].Unsolved[val].Add(boxLoc)
+		s.boxes[p.Get(r, c).Box()].Unsolved[val].Add(boxLoc)
 	}
 
 	// Prepare state:
@@ -36,7 +36,7 @@ func TestFindSkyscraper(t *testing.T) {
 	for r := 0; r < 9; r++ {
 		s.rows[r].Unsolved[val].Clear()
 		for c := 0; c < 9; c++ {
-			p.Grid[r][c].RemoveCandidate(val)
+			p.Get(r, c).RemoveCandidate(val)
 		}
 	}
 	// Also clear nums for cols/boxes for consistency
@@ -64,7 +64,7 @@ func TestFindSkyscraper(t *testing.T) {
 	}
 
 	// Verify eliminations
-	if p.Grid[3][7].HasCandidate(val) {
+	if p.Get(3, 7).HasCandidate(val) {
 		t.Errorf("Target (3,7) should have eliminated candidate %d", val)
 	}
 }
@@ -75,18 +75,18 @@ func TestFindTwoStringKite(t *testing.T) {
 	val := 1
 
 	setCandidate := func(r, c int) {
-		p.Grid[r][c].Candidates.Add(val)
+		p.Get(r, c).Candidates.Add(val)
 		s.rows[r].Unsolved[val].Add(c)
 		s.columns[c].Unsolved[val].Add(r)
 		_, boxLoc := getBoxLoc(r, c)
-		s.boxes[p.Grid[r][c].Box()].Unsolved[val].Add(boxLoc)
+		s.boxes[p.Get(r, c).Box()].Unsolved[val].Add(boxLoc)
 	}
 
 	// Clear candidates for val 1
 	for r := 0; r < 9; r++ {
 		s.rows[r].Unsolved[val].Clear()
 		for c := 0; c < 9; c++ {
-			p.Grid[r][c].RemoveCandidate(val)
+			p.Get(r, c).RemoveCandidate(val)
 		}
 	}
 	for c := 0; c < 9; c++ {
@@ -107,7 +107,7 @@ func TestFindTwoStringKite(t *testing.T) {
 		t.Errorf("2-String Kite should have been found")
 	}
 
-	if p.Grid[5][4].HasCandidate(val) {
+	if p.Get(5, 4).HasCandidate(val) {
 		t.Errorf("Candidate 1 should be eliminated from (5,4)")
 	}
 }

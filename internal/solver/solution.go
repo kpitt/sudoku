@@ -51,15 +51,8 @@ func (step *SolutionStep) WithIndices(indices ...int) *SolutionStep {
 	return step
 }
 
-func (step *SolutionStep) WithCells(cells ...*puzzle.Cell) *SolutionStep {
-	for _, cell := range cells {
-		step.indices = append(step.indices, cell.Row*9+cell.Col)
-	}
-	return step
-}
-
-func (step *SolutionStep) WithPlacedValue(r, c int, v int) *SolutionStep {
-	step.indices = []int{r*9 + c}
+func (step *SolutionStep) WithPlacedValue(idx int, v int) *SolutionStep {
+	step.indices = []int{idx}
 	step.values = []int{v}
 	return step
 }
@@ -80,8 +73,8 @@ func (step *SolutionStep) IsSingle() bool {
 		step.technique == kindBruteForce
 }
 
-func (step *SolutionStep) DeleteCandidate(row, col, value int) {
-	step.deletedCandidates = append(step.deletedCandidates, Candidate{Index: row*9 + col, Value: value})
+func (step *SolutionStep) DeleteCandidate(index, value int) {
+	step.deletedCandidates = append(step.deletedCandidates, Candidate{Index: index, Value: value})
 }
 
 func (s *Solver) FormatStep(step *SolutionStep) string {
@@ -176,7 +169,7 @@ func (step *SolutionStep) formatPlacedValue() string {
 
 	// index references a cell as a single value in the range 0-80, where
 	// index = r*9 + c, so we need to convert it back to a row and column.
-	return fmt.Sprintf("%s=%d", formatCell(step.indices[0]), step.values[0])
+	return fmt.Sprintf("%s=%d", puzzle.FormatCell(step.indices[0]), step.values[0])
 }
 
 func (step *SolutionStep) formatElimination(format string, a ...any) string {
@@ -283,11 +276,6 @@ func (step *SolutionStep) formatRectIndices() string {
 	return formatRectCompact(step.indices)
 }
 
-func formatCell(index int) string {
-	r, c := rowColFromIndex(index)
-	return fmt.Sprintf("r%dc%d", r+1, c+1)
-}
-
 func formatCellsCompact(cells []int) string {
 	if len(cells) == 0 {
 		return ""
@@ -306,7 +294,7 @@ func formatCellsCompact(cells []int) string {
 
 		// Short-circuit path: If there's only one cell, just format it directly.
 		if len(cells) == 1 {
-			result += formatCell(cells[0])
+			result += puzzle.FormatCell(cells[0])
 			break
 		}
 
@@ -433,9 +421,4 @@ func formatDigitsSeparated(digits []int, sep rune) string {
 		result = append(result, rune('0'+d))
 	}
 	return string(result)
-}
-
-func (c *Candidate) GetValues() (row, col int, val int) {
-	row, col = rowColFromIndex(c.Index)
-	return row, col, c.Value
 }
