@@ -1,0 +1,112 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/kpitt/sudoku/internal/solver
+cpu: Apple M1
+BenchmarkSolveByDifficulty/beginner-8         	  144327	     14180 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  169627	     14158 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  171471	     14038 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  171456	     14149 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  169075	     14203 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  171272	     14097 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  171411	     14112 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  169586	     14089 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  165120	     14181 ns/op
+BenchmarkSolveByDifficulty/beginner-8         	  170836	     14128 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  171067	     13978 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  172515	     14003 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  172844	     13996 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  169929	     14013 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  165260	     14147 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  171710	     14000 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  172574	     14159 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  171440	     13974 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  172156	     14054 ns/op
+BenchmarkSolveByDifficulty/advanced-8         	  171758	     13942 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47534	     51305 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47578	     50296 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47673	     50491 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47766	     50280 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47005	     50804 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47497	     50448 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47457	     50621 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47524	     50485 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47263	     50880 ns/op
+BenchmarkSolveByDifficulty/expert-8           	   47463	     50380 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    6835	    327715 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7260	    325716 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7340	    327675 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7357	    328862 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7302	    328161 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7263	    326615 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7278	    326131 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7250	    330657 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7231	    328734 ns/op
+BenchmarkSolveByDifficulty/pro-8              	    7210	    327732 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    5956	    398011 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    6004	    414069 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    5851	    404725 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    5950	    400571 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    6000	    398724 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    6013	    400837 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    5666	    399451 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    5983	    398392 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    6000	    400350 ns/op
+BenchmarkSolveByDifficulty/impossible-8       	    5977	    400297 ns/op
+PASS
+ok  	github.com/kpitt/sudoku/internal/solver	119.466s
+goos: darwin
+goarch: arm64
+pkg: github.com/kpitt/sudoku/internal/solver
+cpu: Apple M1
+BenchmarkComparison/Beginner-8         	  364510	     14353 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  420618	     14337 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  421320	     14320 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  415364	     14400 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  407533	     14445 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  413812	     14366 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  418700	     14357 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  420648	     14350 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  420896	     14363 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Beginner-8         	  419428	     14369 ns/op	   18880 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  455290	     13179 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  453754	     13231 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  457213	     13217 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  442069	     13223 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  458616	     13174 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  455382	     13158 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  454686	     13166 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  455590	     13135 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  454191	     13181 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Advanced-8         	  457650	     13201 ns/op	   18888 B/op	     280 allocs/op
+BenchmarkComparison/Expert-8           	  129710	     46470 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  129649	     46497 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  128764	     46340 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  130318	     46392 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  129996	     46402 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  129174	     46600 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  128269	     46408 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  128859	     46221 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  130014	     46479 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Expert-8           	  129660	     46374 ns/op	   63536 B/op	    1304 allocs/op
+BenchmarkComparison/Pro-8              	   12992	    461561 ns/op	  523659 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   12994	    461527 ns/op	  523659 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   13010	    460963 ns/op	  523659 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   12976	    461813 ns/op	  523658 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   12990	    462126 ns/op	  523659 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   13018	    460782 ns/op	  523658 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   12966	    462446 ns/op	  523659 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   13011	    461098 ns/op	  523659 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   12992	    461731 ns/op	  523659 B/op	    9318 allocs/op
+BenchmarkComparison/Pro-8              	   12968	    462723 ns/op	  523658 B/op	    9318 allocs/op
+BenchmarkComparison/Impossible-8       	   15188	    394957 ns/op	  459010 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15141	    395371 ns/op	  459010 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15188	    395149 ns/op	  459010 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15142	    395929 ns/op	  459010 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15192	    395512 ns/op	  459010 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15162	    395353 ns/op	  459010 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15159	    395594 ns/op	  459010 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15171	    395237 ns/op	  459011 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15055	    397893 ns/op	  459011 B/op	    8242 allocs/op
+BenchmarkComparison/Impossible-8       	   15200	    395528 ns/op	  459010 B/op	    8242 allocs/op
+PASS
+ok  	github.com/kpitt/sudoku/internal/solver	299.496s
