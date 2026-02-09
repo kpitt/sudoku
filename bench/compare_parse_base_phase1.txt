@@ -1,0 +1,58 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/kpitt/sudoku/internal/puzzle
+cpu: Apple M1
+                         │ results_parse_base.txt │      results_parse_phase1.txt       │
+                         │         sec/op         │   sec/op     vs base                │
+ParseString/Beginner-8                2.418µ ± 0%   1.507µ ± 1%  -37.71% (p=0.000 n=10)
+ParseString/Advanced-8                2.435µ ± 0%   1.523µ ± 1%  -37.47% (p=0.000 n=10)
+ParseString/Expert-8                  2.298µ ± 0%   1.398µ ± 0%  -39.17% (p=0.000 n=10)
+ParseString/Pro-8                     2.289µ ± 1%   1.378µ ± 0%  -39.80% (p=0.000 n=10)
+ParseString/Impossible-8              2.260µ ± 0%   1.328µ ± 0%  -41.25% (p=0.000 n=10)
+geomean                               2.339µ        1.425µ       -39.10%
+
+                         │ results_parse_base.txt │       results_parse_phase1.txt       │
+                         │          B/op          │     B/op      vs base                │
+ParseString/Beginner-8               4.562Ki ± 0%   3.391Ki ± 0%  -25.68% (p=0.000 n=10)
+ParseString/Advanced-8               4.562Ki ± 0%   3.391Ki ± 0%  -25.68% (p=0.000 n=10)
+ParseString/Expert-8                 4.562Ki ± 0%   3.391Ki ± 0%  -25.68% (p=0.000 n=10)
+ParseString/Pro-8                    4.562Ki ± 0%   3.391Ki ± 0%  -25.68% (p=0.000 n=10)
+ParseString/Impossible-8             4.562Ki ± 0%   3.391Ki ± 0%  -25.68% (p=0.000 n=10)
+geomean                              4.563Ki        3.391Ki       -25.68%
+
+                         │ results_parse_base.txt │      results_parse_phase1.txt      │
+                         │       allocs/op        │ allocs/op   vs base                │
+ParseString/Beginner-8                83.000 ± 0%   2.000 ± 0%  -97.59% (p=0.000 n=10)
+ParseString/Advanced-8                83.000 ± 0%   2.000 ± 0%  -97.59% (p=0.000 n=10)
+ParseString/Expert-8                  83.000 ± 0%   2.000 ± 0%  -97.59% (p=0.000 n=10)
+ParseString/Pro-8                     83.000 ± 0%   2.000 ± 0%  -97.59% (p=0.000 n=10)
+ParseString/Impossible-8              83.000 ± 0%   2.000 ± 0%  -97.59% (p=0.000 n=10)
+geomean                                83.00        2.000       -97.59%
+
+pkg: github.com/kpitt/sudoku/internal/solver
+                       │ results_parse_base.txt │      results_parse_phase1.txt       │
+                       │         sec/op         │   sec/op     vs base                │
+NewSolver/Beginner-8               11.649µ ± 1%   1.984µ ± 1%  -82.97% (p=0.000 n=10)
+NewSolver/Advanced-8               11.639µ ± 1%   1.995µ ± 2%  -82.86% (p=0.000 n=10)
+NewSolver/Expert-8                 11.622µ ± 0%   1.984µ ± 0%  -82.93% (p=0.000 n=10)
+NewSolver/Pro-8                    11.627µ ± 1%   1.986µ ± 0%  -82.92% (p=0.000 n=10)
+NewSolver/Impossible-8             11.637µ ± 0%   1.990µ ± 0%  -82.90% (p=0.000 n=10)
+geomean                             11.63µ        1.987µ       -82.92%
+
+                       │ results_parse_base.txt │       results_parse_phase1.txt       │
+                       │          B/op          │     B/op      vs base                │
+NewSolver/Beginner-8              20.463Ki ± 0%   6.698Ki ± 0%  -67.27% (p=0.000 n=10)
+NewSolver/Advanced-8              20.463Ki ± 0%   6.698Ki ± 0%  -67.27% (p=0.000 n=10)
+NewSolver/Expert-8                20.463Ki ± 0%   6.698Ki ± 0%  -67.27% (p=0.000 n=10)
+NewSolver/Pro-8                   20.463Ki ± 0%   6.698Ki ± 0%  -67.27% (p=0.000 n=10)
+NewSolver/Impossible-8            20.463Ki ± 0%   6.698Ki ± 0%  -67.27% (p=0.000 n=10)
+geomean                            20.46Ki        6.698Ki       -67.27%
+
+                       │ results_parse_base.txt │      results_parse_phase1.txt      │
+                       │       allocs/op        │ allocs/op   vs base                │
+NewSolver/Beginner-8                454.00 ± 0%   76.00 ± 0%  -83.26% (p=0.000 n=10)
+NewSolver/Advanced-8                454.00 ± 0%   76.00 ± 0%  -83.26% (p=0.000 n=10)
+NewSolver/Expert-8                  454.00 ± 0%   76.00 ± 0%  -83.26% (p=0.000 n=10)
+NewSolver/Pro-8                     454.00 ± 0%   76.00 ± 0%  -83.26% (p=0.000 n=10)
+NewSolver/Impossible-8              454.00 ± 0%   76.00 ± 0%  -83.26% (p=0.000 n=10)
+geomean                              454.0        76.00       -83.26%

@@ -1,0 +1,35 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/kpitt/sudoku/internal/solver
+cpu: Apple M1
+                               │ results_solve_base.txt │      results_solve_phase1.txt       │
+                               │         sec/op         │   sec/op     vs base                │
+SolveByDifficulty/impossible-8              848.9µ ± 0%   400.3µ ± 1%  -52.84% (p=0.000 n=10)
+SolveByDifficulty/beginner-8                68.18µ ± 0%   14.14µ ± 0%  -79.26% (p=0.000 n=10)
+SolveByDifficulty/advanced-8                63.57µ ± 0%   14.00µ ± 1%  -77.97% (p=0.000 n=10)
+SolveByDifficulty/expert-8                 151.61µ ± 0%   50.49µ ± 1%  -66.70% (p=0.000 n=10)
+SolveByDifficulty/pro-8                     753.7µ ± 0%   327.7µ ± 0%  -56.52% (p=0.000 n=10)
+Comparison/Beginner-8                       67.28µ ± 0%   14.36µ ± 0%  -78.66% (p=0.000 n=10)
+Comparison/Advanced-8                       61.57µ ± 1%   13.18µ ± 0%  -78.60% (p=0.000 n=10)
+Comparison/Expert-8                        157.09µ ± 0%   46.41µ ± 0%  -70.46% (p=0.000 n=10)
+Comparison/Pro-8                           1288.5µ ± 0%   461.6µ ± 0%  -64.17% (p=0.000 n=10)
+Comparison/Impossible-8                    1076.2µ ± 2%   395.4µ ± 0%  -63.26% (p=0.000 n=10)
+geomean                                     228.0µ        67.96µ       -70.19%
+
+                        │ results_solve_base.txt │       results_solve_phase1.txt       │
+                        │          B/op          │     B/op      vs base                │
+Comparison/Beginner-8               33.38Ki ± 0%   18.44Ki ± 0%  -44.76% (p=0.000 n=10)
+Comparison/Advanced-8               33.37Ki ± 0%   18.45Ki ± 0%  -44.72% (p=0.000 n=10)
+Comparison/Expert-8                 86.20Ki ± 0%   62.05Ki ± 0%  -28.02% (p=0.000 n=10)
+Comparison/Pro-8                    637.8Ki ± 0%   511.4Ki ± 0%  -19.82% (p=0.000 n=10)
+Comparison/Impossible-8             563.2Ki ± 0%   448.3Ki ± 0%  -20.40% (p=0.000 n=10)
+geomean                             128.1Ki        86.48Ki       -32.48%
+
+                        │ results_solve_base.txt │      results_solve_phase1.txt       │
+                        │       allocs/op        │  allocs/op   vs base                │
+Comparison/Beginner-8                 739.0 ± 0%    280.0 ± 0%  -62.11% (p=0.000 n=10)
+Comparison/Advanced-8                 736.0 ± 0%    280.0 ± 0%  -61.96% (p=0.000 n=10)
+Comparison/Expert-8                  2.872k ± 0%   1.304k ± 0%  -54.60% (p=0.000 n=10)
+Comparison/Pro-8                    18.740k ± 0%   9.318k ± 0%  -50.28% (p=0.000 n=10)
+Comparison/Impossible-8             17.445k ± 0%   8.242k ± 0%  -52.75% (p=0.000 n=10)
+geomean                              3.480k        1.510k       -56.61%

@@ -1,0 +1,112 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/kpitt/sudoku/internal/puzzle
+cpu: Apple M1
+BenchmarkParseString/Beginner-8         	  784528	      1519 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  797377	      1502 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  800437	      1529 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  787198	      1503 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  786766	      1504 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  785236	      1508 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  801339	      1507 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  799474	      1504 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  807208	      1506 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Beginner-8         	  792562	      1508 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  798600	      1529 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  775110	      1519 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  781828	      1520 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  777507	      1525 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  793071	      1534 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  761179	      1533 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  778888	      1518 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  782854	      1518 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  783703	      1517 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Advanced-8         	  781020	      1528 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  841470	      1398 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  852292	      1402 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  840919	      1397 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  867939	      1403 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  838669	      1395 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  850591	      1394 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  847297	      1395 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  862006	      1403 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  853022	      1396 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Expert-8           	  837520	      1400 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  875110	      1377 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  868876	      1381 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  852378	      1376 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  869782	      1376 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  867344	      1376 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  867717	      1381 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  835786	      1396 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  847676	      1379 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  868780	      1379 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Pro-8              	  866542	      1374 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  915543	      1328 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  877062	      1332 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  909322	      1327 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  902738	      1327 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  903565	      1339 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  905187	      1328 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  900883	      1328 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  907245	      1325 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  892856	      1323 ns/op	    3472 B/op	       2 allocs/op
+BenchmarkParseString/Impossible-8       	  898940	      1333 ns/op	    3472 B/op	       2 allocs/op
+PASS
+ok  	github.com/kpitt/sudoku/internal/puzzle	59.953s
+goos: darwin
+goarch: arm64
+pkg: github.com/kpitt/sudoku/internal/solver
+cpu: Apple M1
+BenchmarkNewSolver/Beginner-8         	  584302	      2025 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  597492	      1982 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  605902	      1995 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  600840	      1984 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  595046	      1983 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  610052	      1982 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  598761	      1986 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  606895	      1980 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  600729	      1977 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Beginner-8         	  603134	      1985 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  593431	      1999 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  602217	      1990 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  588670	      1983 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  606327	      1965 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  605828	      1980 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  592946	      2071 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  568700	      2038 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  591050	      2009 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  602628	      1986 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Advanced-8         	  559833	      2001 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  594405	      1974 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  608068	      1989 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  602403	      1986 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  601900	      1980 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  594214	      1983 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  592090	      1983 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  606573	      1969 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  609658	      1990 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  603511	      1984 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Expert-8           	  591642	      1990 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  598023	      1977 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  605542	      1988 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  593422	      1987 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  603750	      1985 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  602112	      1980 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  596114	      2009 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  597182	      1985 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  598279	      1983 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  606927	      1991 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Pro-8              	  601821	      1992 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  598452	      1985 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  592941	      1991 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  587060	      1990 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  593283	      1988 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  598665	      2005 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  604197	      1986 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  606457	      1990 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  598766	      1993 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  599338	      1988 ns/op	    6859 B/op	      76 allocs/op
+BenchmarkNewSolver/Impossible-8       	  594068	      1989 ns/op	    6859 B/op	      76 allocs/op
+PASS
+ok  	github.com/kpitt/sudoku/internal/solver	59.863s
