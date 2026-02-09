@@ -131,14 +131,9 @@ func (p *Puzzle) updatePuzzleState(idx int, val int) {
 }
 
 func (p *Puzzle) removeConflictingCandidates(idx int, val int) {
-	r, c := idx/9, idx%9
-	rb, cb := r/3*3, c/3*3
-	for i := range 9 {
-		p.Cells[r*9+i].RemoveCandidate(val) // remove candidate from row r
-		p.Cells[i*9+c].RemoveCandidate(val) // remove candidate from column c
-		// remove candidate from the box that contains (r,c)
-		br, bc := rb+i/3, cb+i%3
-		p.Cells[br*9+bc].RemoveCandidate(val)
+	peers := GetPeers(idx)
+	for i := range 20 {
+		p.Cells[peers[i]].RemoveCandidate(val)
 	}
 }
 
