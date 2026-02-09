@@ -467,19 +467,16 @@ func (s *Solver) findXYWings() (found bool) {
 		return false
 	}
 
-	// Try each candidate as the pivot cell, checking it against all of the other
-	// candidates.
+	// Try each candidate as the pivot cell, checking it against its peers.
 	for _, pivot := range candidates {
-		if s.checkXYWingsForPivot(pivot, candidates) {
+		if s.checkXYWingsForPivot(pivot) {
 			return true
 		}
 	}
 	return false
 }
 
-func (s *Solver) checkXYWingsForPivot(
-	pivot *puzzle.Cell, candidates []*puzzle.Cell,
-) (found bool) {
+func (s *Solver) checkXYWingsForPivot(pivot *puzzle.Cell) (found bool) {
 	// Get the x and y values.
 	values := pivot.CandidateValues()
 	x, y := values[0], values[1]
@@ -488,8 +485,12 @@ func (s *Solver) checkXYWingsForPivot(
 	// x or y as a candidate, but not both.  Collect the cells into separate lists
 	// for cells that have x but not y and cells that have y but not x.
 	var xCells, yCells []*puzzle.Cell
-	for _, cell := range candidates {
-		if cell.Index() == pivot.Index() || cell.NumCandidates() != 2 || !seesCell(cell, pivot) {
+
+	peers := puzzle.GetPeers(pivot.Index())
+	for i := range 20 {
+		cell := s.puzzle.Cell(peers[i])
+		if cell.Index() == pivot.Index() || cell.NumCandidates() != 2 ||
+			!seesCell(cell.Index(), pivot.Index()) {
 
 			continue
 		}
@@ -511,7 +512,7 @@ func (s *Solver) checkXYWingsForPivot(
 	for _, xc := range xCells {
 		// Look for a y-cell that also contains z and is not visible from the x-cell.
 		for _, yc := range yCells {
-			if seesCell(xc, yc) {
+			if seesCell(xc.Index(), yc.Index()) {
 				continue
 			}
 
@@ -525,7 +526,7 @@ func (s *Solver) checkXYWingsForPivot(
 
 			z := common.Value()
 			step := NewStep(kindXYWing)
-			if s.eliminateXYWingCells(z, xc, yc, step) {
+			if s.eliminateFromIntersection(xc.Index(), yc.Index(), -1, z, step) {
 				s.applyStep(step.
 					WithIndices(pivot.Index(), xc.Index(), yc.Index()).
 					WithValues(x, y, z))
@@ -535,35 +536,6 @@ func (s *Solver) checkXYWingsForPivot(
 	}
 
 	return false
-}
-
-// eliminateXYWingCells removes candidate value z from all cells that see both
-// xCell and yCell.  This assumes that xCell and yCell cannot see each other.
-func (s *Solver) eliminateXYWingCells(z int, xCell, yCell *puzzle.Cell, step *SolutionStep) bool {
-	seesYCell := func(cell *puzzle.Cell) bool {
-		return seesCell(cell, yCell)
-	}
-	removeZs := func(h *House) bool {
-		// Find candidate locations for value z in house h, which is assumed to
-		// be a house that contains xCell.
-		locs := h.Unsolved[z]
-		if !locs.Empty() {
-			// Select only the cells that also see yCell.
-			cells := h.cellsFromLocs(locs.Values())
-			cells = filterSlice(cells, seesYCell)
-			for _, zCell := range cells {
-				step.DeleteCandidate(zCell.Index(), z)
-			}
-			// Return true if we found any candidates to remove.
-			return len(cells) != 0
-		}
-		return false
-	}
-
-	found := removeZs(s.rows[xCell.Row])
-	found = removeZs(s.columns[xCell.Col]) || found
-	found = removeZs(s.boxes[xCell.Box()]) || found
-	return found
 }
 
 func (s *Solver) findAvoidableRectangles() (found bool) {
@@ -641,10 +613,14 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 			s.columns[pivot.Col].Cells[:],
 		)
 		for _, yzCell := range yzCells {
+			if !isYZCandidate(yzCell) {
+				continue
+			}
+			// We now know that the 2 cells are {x,z} and {y,z}, so the intersection
+			// must be {z}.
+			z := xzCell.Candidates.Intersection(yzCell.Candidates).Value()
 			step := NewStep(kindXYZWing)
-			if isYZCandidate(yzCell) &&
-				s.eliminateXYZWingCells(pivot, xzCell, yzCell, step) {
-
+			if s.eliminateFromIntersection(xzCell.Index(), yzCell.Index(), pivot.Index(), z, step) {
 				s.applyStep(step.
 					WithIndices(pivot.Index(), xzCell.Index(), yzCell.Index()).
 					WithValues(pivot.CandidateValues()...))
@@ -656,39 +632,63 @@ func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
 	return false
 }
 
-// eliminateXYZWingCells removes candidate value z from any cells that see all
-// three of xyzCell, xzCell, and yzCell.  The value x is the one candidate value
-// that appears as a candidate in all 3 cells.  This assumes that xzCell and
-// yzCell cannot see each other, and that xzCell is in the same box as xyzCell.
-func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, step *SolutionStep) bool {
-	// The z value is the only common candidate between xzCell and yzCell.
-	zSet := xzCell.Candidates.Intersection(yzCell.Candidates)
-	if zSet.Empty() {
-		return false
-	}
-	z := zSet.Value()
+// eliminateFromIntersection removes `val` from any cell that sees ALL provided indices.
+// If pivotIdx is -1, it finds intersection of (idx1, idx2).
+// If pivotIdx is >= 0, it finds intersection of (idx1, idx2, pivotIdx).
+func (s *Solver) eliminateFromIntersection(
+	idx1, idx2, pivotIdx, val int, step *SolutionStep,
+) bool {
+	changed := false
 
-	// The only cells that could possibly see all three XYZ-Wing cells are the
-	// other cells in the same box as xyzCell and xzCell, so we just need to
-	// check the candidate locations for value z in that box and select the
-	// ones that can see yzCell.
-	box := s.boxes[xyzCell.Box()]
-	locs := box.Unsolved[z]
-	cells := box.cellsFromLocs(locs.Values())
-	cells = filterSlice(cells, func(cell *puzzle.Cell) bool {
-		return cell.Index() != xyzCell.Index() &&
-			cell.Index() != xzCell.Index() &&
-			seesCell(cell, yzCell)
-	})
-	if len(cells) == 0 {
-		// No candidates found to eliminate.
-		return false
+	peers1 := puzzle.GetPeers(idx1)
+
+	// Build fast lookup table for peers of idx2.
+	isPeerOf2 := s.getPeerSet(idx2)
+
+	var isPeerOfPivot [81]bool
+	hasPivot := false
+	if pivotIdx != -1 {
+		isPeerOfPivot = s.getPeerSet(pivotIdx)
+		hasPivot = true
 	}
 
-	for _, xCell := range cells {
-		step.DeleteCandidate(xCell.Index(), z)
+	for i := range 20 {
+		candidateIdx := int(peers1[i])
+
+		// Must be peer of idx2
+		if !isPeerOf2[candidateIdx] {
+			continue
+		}
+
+		// Must be peer of pivot
+		if hasPivot && !isPeerOfPivot[candidateIdx] {
+			continue
+		}
+
+		// Don't eliminate from the pattern cells themselves
+		if candidateIdx == idx1 || candidateIdx == idx2 || candidateIdx == pivotIdx {
+			continue
+		}
+
+		// Remove the candidate if it exists
+		if s.puzzle.Cell(candidateIdx).HasCandidate(val) {
+			changed = true
+			step.DeleteCandidate(candidateIdx, val)
+		}
 	}
-	return true
+	return changed
+}
+
+// getPeerSet returns a fast lookup table for peers.
+func (s *Solver) getPeerSet(idx int) [81]bool {
+	peers := puzzle.GetPeers(idx)
+
+	var lookup [81]bool
+	for i := range 20 {
+		peerIdx := peers[i]
+		lookup[peerIdx] = true
+	}
+	return lookup
 }
 
 func (s *Solver) findHiddenQuadruples() (found bool) {
@@ -896,10 +896,8 @@ func (s *Solver) checkSkyscraper(baseLines []*House) (found bool) {
 
 				// Try to eliminate candidates from any cell that sees both tops.
 				step := NewStep(kindSkyscraper).WithValues(val)
-				if s.eliminatePeerTargets(val, top1, top2, step) {
-					s.applyStep(step.WithIndices(
-						top1.Index(), top2.Index(), floor1.Index(), floor2.Index(),
-					))
+				if s.eliminateFromIntersection(top1.Index(), top2.Index(), -1, val, step) {
+					s.applyStep(step.WithIndices(top1.Index(), top2.Index(), floor1.Index(), floor2.Index()))
 					return true
 				}
 			}
@@ -907,47 +905,6 @@ func (s *Solver) checkSkyscraper(baseLines []*House) (found bool) {
 	}
 
 	return false
-}
-
-func (s *Solver) eliminatePeerTargets(
-	val int, c1, c2 *puzzle.Cell, step *SolutionStep,
-) bool {
-	found := false
-
-	// Check all cells that see c1 to see if they also see c2.
-	// We check the 3 houses that contain c1.
-	houses := []*House{
-		s.rows[c1.Row],
-		s.columns[c1.Col],
-		s.boxes[c1.Box()],
-	}
-
-	checked := make(map[int]bool)
-
-	for _, h := range houses {
-		for _, cell := range h.Cells {
-			// Skip the cells themselves.
-			if cell.Index() == c1.Index() || cell.Index() == c2.Index() {
-				continue
-			}
-
-			// Avoid checking the same cell twice (e.g. if it's in multiple shared houses)
-			idx := cell.Row*9 + cell.Col
-			if checked[idx] {
-				continue
-			}
-			checked[idx] = true
-
-			// If the cell contains the candidate value and sees c2, then it
-			// sees both c1 and c2, so we can eliminate the candidate.
-			if cell.HasCandidate(val) && seesCell(cell, c2) {
-				step.DeleteCandidate(cell.Index(), val)
-				found = true
-			}
-		}
-	}
-
-	return found
 }
 
 func (s *Solver) findTwoStringKite() (found bool) {
@@ -1025,7 +982,7 @@ func (s *Solver) checkTwoStringKite(val int, row, col *House) (found bool) {
 				WithValues(val).
 				WithBases(row, col)
 
-			if s.eliminatePeerTargets(val, tail1, tail2, step) {
+			if s.eliminateFromIntersection(tail1.Index(), tail2.Index(), -1, val, step) {
 				s.applyStep(step.
 					WithIndices(tail1.Index(), tail2.Index(), rCell.Index(), cCell.Index()))
 				// Note: visualization usually highlights tails and connection cells.
