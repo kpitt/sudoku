@@ -82,7 +82,7 @@ classified by human difficulty.
 
 ### Phase 2: Tables & Lookups
 
-- [ ] **Pre-computed Peers**: Implement `PeerLookup [81][20]uint8` to replace dynamic peer calculation.
+- [x] **Pre-computed Peers**: Implement `PeerLookup [81][20]uint8` to replace dynamic peer calculation.
 - [ ] **Pre-computed Houses**: Implement `HouseLookup [27][9]uint8` to replace `House` structs and maps.
 - [ ] **Remove Maps**: Eliminate `House.Unsolved` map in favor of direct array iteration.
 

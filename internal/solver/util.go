@@ -44,18 +44,6 @@ func getBoxBase(r, c int) (rb, cb int) {
 	return r / 3 * 3, c / 3 * 3
 }
 
-// seesCell returns true if cell with index idxA sees cell with index idxB
-// (i.e. they share a house).
-func seesCell(idxA, idxB int) bool {
-	peers := puzzle.GetPeers(idxA)
-	for i := range 20 {
-		if peers[i] == idxB {
-			return true
-		}
-	}
-	return false
-}
-
 // sameCandidates returns true if 2 cells a and b have exactly the same set of
 // candidate values.
 func sameCandidates(a, b *puzzle.Cell) bool {
