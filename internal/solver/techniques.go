@@ -453,88 +453,85 @@ func (s *Solver) findNakedQuadruples() (found bool) {
 	return s.findNakedSubsets(4, kindNakedQuadruple)
 }
 
-func (s *Solver) findXYWings() (found bool) {
-	// Collect a list of all cells with exactly 2 candidates.
-	var candidates []*puzzle.Cell
-	for i := range 81 {
-		if s.puzzle.Cell(i).NumCandidates() == 2 {
-			candidates = append(candidates, s.puzzle.Cell(i))
-		}
-	}
-	if len(candidates) < 3 {
-		// An XY-Wing requires a pivot cell and 2 pincer cells, so we need at
-		// least 3 candidates.
-		return false
-	}
+func (s *Solver) findXYWings() bool {
+	// Iterate every cell to act as the potential "Pivot"
+	for pivotIdx := range 81 {
+		pivotCell := s.puzzle.Cell(pivotIdx)
 
-	// Try each candidate as the pivot cell, checking it against its peers.
-	for _, pivot := range candidates {
-		if s.checkXYWingsForPivot(pivot) {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *Solver) checkXYWingsForPivot(pivot *puzzle.Cell) (found bool) {
-	// Get the x and y values.
-	values := pivot.CandidateValues()
-	x, y := values[0], values[1]
-
-	// Find the candidate cells that can be seen by the pivot cell and have either
-	// x or y as a candidate, but not both.  Collect the cells into separate lists
-	// for cells that have x but not y and cells that have y but not x.
-	var xCells, yCells []*puzzle.Cell
-
-	peers := puzzle.GetPeers(pivot.Index())
-	for i := range 20 {
-		cell := s.puzzle.Cell(peers[i])
-		if cell.Index() == pivot.Index() || cell.NumCandidates() != 2 ||
-			!seesCell(cell.Index(), pivot.Index()) {
-
+		// Pivot must have exactly 2 candidates
+		if pivotCell.NumCandidates() != 2 {
 			continue
 		}
 
-		if cell.HasCandidate(x) && !cell.HasCandidate(y) {
-			xCells = append(xCells, cell)
-		} else if !cell.HasCandidate(x) && cell.HasCandidate(y) {
-			yCells = append(yCells, cell)
-		}
-	}
+		// Extract Pivot candidates (X and Y)
+		// We can get them from CandidateValues() which returns sorted int slice
+		vals := pivotCell.CandidateValues()
+		x, y := vals[0], vals[1]
 
-	if len(xCells) == 0 || len(yCells) == 0 {
-		// We need at least one candidate cell for each value to have an XY-Wing.
-		return false
-	}
+		// Iterate Pivot's peers to find potential Pincers
+		peers := puzzle.GetPeers(pivotIdx) // Take a pointer to avoid array copy
 
-	// Check each of the x-cells against each of the y-cells to see if they share
-	// a common 3rd value z.
-	for _, xc := range xCells {
-		// Look for a y-cell that also contains z and is not visible from the x-cell.
-		for _, yc := range yCells {
-			if seesCell(xc.Index(), yc.Index()) {
+		// We need to find two distinct pincers among the peers
+		for i := range 20 {
+			pincerAIdx := peers[i]
+			pincerA := s.puzzle.Cell(pincerAIdx)
+
+			if pincerA.NumCandidates() != 2 {
 				continue
 			}
 
-			// The intersection of {x, z} and {y, z} must be {z}.
-			// Since x != y, any intersection is the common value z.
-			common := xc.Candidates.Intersection(yc.Candidates)
-			if common.Empty() {
-				// No common candidate, not an XY-Wing
+			// It must look like {X, Z} or {Y, Z}
+			matchX := pincerA.HasCandidate(x)
+			matchY := pincerA.HasCandidate(y)
+
+			// XOR: It must match X or Y, but not both (that would be identical to Pivot)
+			if matchX == matchY {
 				continue
 			}
 
-			z := common.Value()
-			step := NewStep(kindXYWing)
-			if s.eliminateFromIntersection(xc.Index(), yc.Index(), -1, z, step) {
-				s.applyStep(step.
-					WithIndices(pivot.Index(), xc.Index(), yc.Index()).
-					WithValues(x, y, z))
-				return true
+			// Determine Z (the non-shared candidate in Pincer A)
+			// Mask of PincerA minus Pivot Mask leaves only Z
+			zSet := pincerA.Candidates.Difference(pivotCell.Candidates)
+			if zSet.Size() != 1 {
+				continue
+			} // Should not happen if count is 2
+			zVal := zSet.Value()
+
+			// Now look for Pincer B
+			// If Pincer A matched X, Pincer B must match Y (and share Z).
+			// If Pincer A matched Y, Pincer B must match X (and share Z).
+			targetSharedVal := y
+			if matchY {
+				targetSharedVal = x
+			}
+
+			// Inner loop to find Pincer B
+			for j := i + 1; j < 20; j++ {
+				pincerBIdx := peers[j]
+				pincerB := s.puzzle.Cell(pincerBIdx)
+
+				if pincerB.NumCandidates() != 2 {
+					continue
+				}
+
+				// Pincer B must have {targetSharedVal, zVal}
+				if !pincerB.HasCandidate(targetSharedVal) || !pincerB.HasCandidate(zVal) {
+					continue
+				}
+
+				// Found a valid XY-Wing!
+				// Pivot: {X,Y}, PincerA: {X,Z}, PincerB: {Y,Z}
+				// Elimination: Remove Z from common peers of Pincer A and Pincer B
+				step := NewStep(kindXYWing)
+				if s.eliminateFromIntersection(pincerAIdx, pincerBIdx, -1, zVal, step) {
+					s.applyStep(step.
+						WithIndices(pivotIdx, pincerAIdx, pincerBIdx).
+						WithValues(x, y, zVal))
+					return true
+				}
 			}
 		}
 	}
-
 	return false
 }
 
@@ -551,84 +548,61 @@ func (s *Solver) findAvoidableRectangles() (found bool) {
 // any cell that sees all three.  Note that one pincer *MUST* be in the same
 // box as the pivot cell in order for it to be possible for any cell to see the
 // pivot and both pincers.
-func (s *Solver) findXYZWings() (found bool) {
-	// Collect a list of all cells with exactly 3 candidates.
-	p := s.puzzle
-	var candidates []*puzzle.Cell
-	for i := range 81 {
-		if p.Cell(i).NumCandidates() == 3 {
-			candidates = append(candidates, p.Cell(i))
-		}
-	}
+func (s *Solver) findXYZWings() bool {
+	for pivotIdx := range 81 {
+		pivotCell := s.puzzle.Cell(pivotIdx)
 
-	// Check each candidate as a possible pivot cell for an XYZ-Wing.
-	return slices.ContainsFunc(candidates, s.checkXYZWingsForPivot)
-}
-
-func (s *Solver) checkXYZWingsForPivot(pivot *puzzle.Cell) (found bool) {
-	// Find cells in the same box as the pivot cell which have exactly 2
-	// candidates that both appear in the pivot cell.
-	box := s.boxes[pivot.Box()]
-	var xzCells []*puzzle.Cell
-	for _, cell := range box.Cells {
-		if cell.NumCandidates() == 2 {
-			// The pivot cell can't match here because it has 3 candidates.
-			values := cell.CandidateValues()
-			if pivot.HasCandidate(values[0]) && pivot.HasCandidate(values[1]) {
-				xzCells = append(xzCells, cell)
-			}
-		}
-	}
-	if len(xzCells) == 0 {
-		// No valid candidates found.
-		return false
-	}
-
-	for _, xzCell := range xzCells {
-		// Find the y value (pivot - xzCell).
-		// Pivot::{x,y,z}, xzCell::{x,z} => Difference::{y}
-		ySet := pivot.Candidates.Difference(xzCell.Candidates)
-		if ySet.Empty() {
+		if pivotCell.NumCandidates() != 3 {
 			continue
-		} // Should not happen if xzCell is valid subset
-		y := ySet.Value()
-
-		// Now find a cell in the same row or column as the pivot cell.
-		isYZCandidate := func(cell *puzzle.Cell) bool {
-			if cell.Box() == pivot.Box() ||
-				cell.NumCandidates() != 2 ||
-				!cell.HasCandidate(y) {
-
-				return false
-			}
-
-			// Verify it shares Z with xzCell
-			// yzCell::{y,z}, xzCell::{x,z} => Intersection::{z}
-			// (Assuming x != y, which is true)
-			return cell.Candidates.Intersects(xzCell.Candidates)
 		}
 
-		yzCells := slices.Concat(
-			s.rows[pivot.Row].Cells[:],
-			s.columns[pivot.Col].Cells[:],
-		)
-		for _, yzCell := range yzCells {
-			if !isYZCandidate(yzCell) {
+		pivotMask := pivotCell.Candidates
+		peers := puzzle.GetPeers(pivotIdx)
+
+		// Search for Pincer A
+		for i := range 20 {
+			pAIdx := peers[i]
+			pA := s.puzzle.Cell(pAIdx)
+
+			if pA.NumCandidates() != 2 {
 				continue
 			}
-			// We now know that the 2 cells are {x,z} and {y,z}, so the intersection
-			// must be {z}.
-			z := xzCell.Candidates.Intersection(yzCell.Candidates).Value()
-			step := NewStep(kindXYZWing)
-			if s.eliminateFromIntersection(xzCell.Index(), yzCell.Index(), pivot.Index(), z, step) {
-				s.applyStep(step.
-					WithIndices(pivot.Index(), xzCell.Index(), yzCell.Index()).
-					WithValues(pivot.CandidateValues()...))
-				return true
+
+			maskA := pA.Candidates
+			if !maskA.IsSubsetOf(pivotMask) {
+				continue
+			}
+
+			// Search for Pincer B
+			for j := i + 1; j < 20; j++ {
+				pBIdx := peers[j]
+				pB := s.puzzle.Cell(pBIdx)
+
+				if pB.NumCandidates() != 2 {
+					continue
+				}
+				maskB := pB.Candidates
+				if !maskB.IsSubsetOf(pivotMask) {
+					continue
+				}
+
+				union := maskA.Union(maskB)
+				intersection := maskA.Intersection(maskB)
+
+				if union == pivotMask && intersection.Size() == 1 {
+					zVal := bitset.BitSet16(intersection).Value()
+
+					step := NewStep(kindXYZWing)
+					if s.eliminateFromIntersection(pAIdx, pBIdx, pivotIdx, zVal, step) {
+						s.applyStep(step.
+							WithIndices(pivotIdx, pAIdx, pBIdx).
+							WithValues(pivotCell.CandidateValues()...))
+						return true
+					}
+				}
 			}
 		}
 	}
-
 	return false
 }
 

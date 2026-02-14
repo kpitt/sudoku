@@ -77,16 +77,16 @@ func TestUnion(t *testing.T) {
 	s1 := FromValues16(1, 2)
 	s2 := FromValues16(2, 3)
 
-	// Test method Union (in-place)
-	s1.Union(s2)
-	if s1.Size() != 3 {
-		t.Errorf("Union (method) failed size check: %d", s1.Size())
+	// Test method Union
+	s3 := s1.Union(s2)
+	if s3.Size() != 3 {
+		t.Errorf("Union (method) failed size check: %d", s3.Size())
 	}
-	if !s1.Contains(1) || !s1.Contains(2) || !s1.Contains(3) {
+	if !s3.Contains(1) || !s3.Contains(2) || !s3.Contains(3) {
 		t.Errorf("Union (method) missing elements")
 	}
 
-	// Test function Union (new set)
+	// Test function Union
 	sA := FromValues16(4, 8)
 	sB := FromValues16(8, 12)
 	sC := Union(sA, sB)

@@ -91,11 +91,9 @@ func (s BitSet16) All() iter.Seq[int] {
 	}
 }
 
-// Union updates set s to be the union of s with set a.
-// Note that this function modifies s in place.  To return the union as a new
-// set, use the `Union` function instead.
-func (s *BitSet16) Union(a BitSet16) {
-	*s |= a
+// Union returns a new set that is the union of s and a.
+func (s BitSet16) Union(a BitSet16) BitSet16 {
+	return s | a
 }
 
 // Union returns a new set containing the union of specified sets.
