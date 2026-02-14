@@ -8,6 +8,11 @@ package puzzle
 var PeerLookup [81][20]int
 
 func init() {
+	InitPeerLookup()
+}
+
+// InitPeerLookup initializes the PeerLookup table.
+func InitPeerLookup() {
 	for i := range 81 {
 		r, c := i/9, i%9
 		boxStartR, boxStartC := (r/3)*3, (c/3)*3
