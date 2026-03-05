@@ -7,9 +7,13 @@ import (
 	"unicode"
 )
 
+// MaxPuzzleSize is the maximum allowed size for a puzzle input file (1MB).
+const MaxPuzzleSize = 1024 * 1024
+
 func FromFile(f *os.File) (*Puzzle, error) {
 	var buf strings.Builder
-	if data, err := io.ReadAll(f); err != nil {
+	lr := io.LimitReader(f, MaxPuzzleSize)
+	if data, err := io.ReadAll(lr); err != nil {
 		return nil, err
 	} else {
 		_, _ = buf.Write(data)
