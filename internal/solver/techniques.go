@@ -148,37 +148,49 @@ func (s *Solver) checkHiddenSinglesForHouse(h *House) bool {
 	return false
 }
 
-func (s *Solver) findNakedPairs() (found bool) {
-	return slices.ContainsFunc(s.houses, s.checkNakedPairsForHouse)
+func (s *Solver) findNakedSubsets(size int, kind techniqueKind) (found bool) {
+	return slices.ContainsFunc(s.houses, func(h *House) bool {
+		return s.checkNakedSubsetsForHouse(size, kind, h)
+	})
 }
 
-func (s *Solver) checkNakedPairsForHouse(h *House) (found bool) {
+func (s *Solver) checkNakedSubsetsForHouse(size int, kind techniqueKind, h *House) (found bool) {
 	var locsBuf [9]int
 	locs := locsBuf[:0]
-	// Collect a list of all locations with exactly 2 candidate values.
+	// Collect a list of all locations with no more than `size` candidate values.
 	for i, c := range h.Cells {
-		if c.NumCandidates() == 2 {
+		numCand := c.NumCandidates()
+		if numCand >= 2 && numCand <= size {
 			locs = append(locs, i)
 		}
 	}
-	if len(locs) < 2 {
-		// We need at least 2 candidate values to have a pair.
+	if len(locs) < size {
+		// We need at least `size` candidate values to have a subset of that size.
 		return false
 	}
 
-	for i := 0; i < len(locs)-1; i++ {
-		for j := i + 1; j < len(locs); j++ {
-			a, b := locs[i], locs[j]
-			valA, valB := h.Cells[a].Candidates, h.Cells[b].Candidates
-			valueSet := bitset.Union(valA, valB)
-			if valueSet.Size() != 2 {
-				// If the union of the location sets does not have exactly 2 elements, then
-				// this is not a naked pair.
-				continue
-			}
+	// Array to keep track of combination indices
+	indices := make([]int, size)
+	for i := range indices {
+		indices[i] = i
+	}
 
-			locSet := bitset.FromValues16(a, b)
-			step := NewStep(kindNakedPair)
+	for {
+		// Check the current combination
+		valueSet := bitset.BitSet16(0)
+		for _, idx := range indices {
+			valueSet = bitset.Union(valueSet, h.Cells[locs[idx]].Candidates)
+		}
+
+		if valueSet.Size() == size {
+			// Found a subset
+			var locValues []int
+			for _, idx := range indices {
+				locValues = append(locValues, locs[idx])
+			}
+			locSet := bitset.FromValues16(locValues...)
+
+			step := NewStep(kind)
 			if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
 				s.applyStep(step.
 					WithIndices(h.indexesFromLocs(locSet.Values())...).
@@ -187,9 +199,30 @@ func (s *Solver) checkNakedPairsForHouse(h *House) (found bool) {
 				return true
 			}
 		}
+
+		// Generate next combination
+		// Find the rightmost index that can be incremented
+		i := size - 1
+		for i >= 0 && indices[i] == i+len(locs)-size {
+			i--
+		}
+
+		if i < 0 {
+			break // All combinations generated
+		}
+
+		// Increment the index and adjust all subsequent indices
+		indices[i]++
+		for j := i + 1; j < size; j++ {
+			indices[j] = indices[j-1] + 1
+		}
 	}
 
 	return false
+}
+
+func (s *Solver) findNakedPairs() (found bool) {
+	return s.findNakedSubsets(2, kindNakedPair)
 }
 
 // eliminateFromOtherLocs removes the candidates listed in values from all
@@ -405,50 +438,7 @@ func (s *Solver) eliminateOtherValues(
 }
 
 func (s *Solver) findNakedTriples() (found bool) {
-	return slices.ContainsFunc(s.houses, s.checkNakedTriplesForHouse)
-}
-
-func (s *Solver) checkNakedTriplesForHouse(h *House) (found bool) {
-	// Take a slice over a fixed array to avoid heap allocations.
-	var locsBuf [9]int
-	locs := locsBuf[:0]
-	for i, c := range h.Cells {
-		// Collect a list of all locations with either 2 or 3 candidate values.
-		if c.NumCandidates() == 2 || c.NumCandidates() == 3 {
-			locs = append(locs, i)
-		}
-	}
-	if len(locs) < 3 {
-		// We need at least 3 candidate values to have a triple.
-		return false
-	}
-
-	for i := 0; i < len(locs)-2; i++ {
-		for j := i + 1; j < len(locs)-1; j++ {
-			for k := j + 1; k < len(locs); k++ {
-				a, b, c := locs[i], locs[j], locs[k]
-				valA, valB, valC := h.Cells[a].Candidates, h.Cells[b].Candidates, h.Cells[c].Candidates
-				valueSet := bitset.Union(valA, valB, valC)
-				if valueSet.Size() != 3 {
-					// If the union of the location sets does not have exactly 3 elements, then
-					// this is not a naked triple.
-					continue
-				}
-
-				locSet := bitset.FromValues16(a, b, c)
-				step := NewStep(kindNakedTriple)
-				if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
-					s.applyStep(step.
-						WithIndices(h.indexesFromLocs(locSet.Values())...).
-						WithValues(valueSet.Values()...).
-						WithHouse(h))
-					return true
-				}
-			}
-		}
-	}
-
-	return false
+	return s.findNakedSubsets(3, kindNakedTriple)
 }
 
 func (s *Solver) findHiddenTriples() (found bool) {
@@ -502,51 +492,7 @@ func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
 }
 
 func (s *Solver) findNakedQuadruples() (found bool) {
-	return slices.ContainsFunc(s.houses, s.checkNakedQuadruplesForHouse)
-}
-
-func (s *Solver) checkNakedQuadruplesForHouse(h *House) (found bool) {
-	var locsBuf [9]int
-	locs := locsBuf[:0]
-	for i, c := range h.Cells {
-		// Collect a list of all locations with either 2, 3 or 4 candidate values.
-		if c.NumCandidates() == 2 || c.NumCandidates() == 3 || c.NumCandidates() == 4 {
-			locs = append(locs, i)
-		}
-	}
-	if len(locs) < 4 {
-		// We need at least 4 candidate values to have a quadruple.
-		return false
-	}
-
-	for i := 0; i < len(locs)-3; i++ {
-		for j := i + 1; j < len(locs)-2; j++ {
-			for k := j + 1; k < len(locs)-1; k++ {
-				for n := k + 1; n < len(locs); n++ {
-					a, b, c, d := locs[i], locs[j], locs[k], locs[n]
-					valA, valB, valC, valD := h.Cells[a].Candidates, h.Cells[b].Candidates, h.Cells[c].Candidates, h.Cells[d].Candidates
-					valueSet := bitset.Union(valA, valB, valC, valD)
-					if valueSet.Size() != 4 {
-						// If the union of the location sets does not have exactly 4 elements, then
-						// this is not a naked quadruple.
-						continue
-					}
-
-					locSet := bitset.FromValues16(a, b, c, d)
-					step := NewStep(kindNakedQuadruple)
-					if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
-						s.applyStep(step.
-							WithIndices(h.indexesFromLocs(locSet.Values())...).
-							WithValues(valueSet.Values()...).
-							WithHouse(h))
-						return true
-					}
-				}
-			}
-		}
-	}
-
-	return false
+	return s.findNakedSubsets(4, kindNakedQuadruple)
 }
 
 func (s *Solver) findXYWings() (found bool) {
