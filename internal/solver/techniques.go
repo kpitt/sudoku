@@ -179,11 +179,10 @@ func (s *Solver) checkNakedSubsetsForHouse(size int, kind techniqueKind, h *Hous
 			}
 
 			if valueSet.Size() == size {
-				var locValues []int
+				var locSet bitset.BitSet16
 				for _, idx := range currentIndices {
-					locValues = append(locValues, locs[idx])
+					locSet.Add(locs[idx])
 				}
-				locSet := bitset.FromValues16(locValues...)
 
 				step := NewStep(kind)
 				if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
