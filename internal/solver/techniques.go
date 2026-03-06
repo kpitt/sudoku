@@ -169,56 +169,45 @@ func (s *Solver) checkNakedSubsetsForHouse(size int, kind techniqueKind, h *Hous
 		return false
 	}
 
-	// Array to keep track of combination indices
-	indices := make([]int, size)
-	for i := range indices {
-		indices[i] = i
-	}
+	// Try combinations of the required size.
+	var checkCombinations func(start int, currentIndices []int) bool
+	checkCombinations = func(start int, currentIndices []int) bool {
+		if len(currentIndices) == size {
+			valueSet := bitset.BitSet16(0)
+			for _, idx := range currentIndices {
+				valueSet = bitset.Union(valueSet, h.Cells[locs[idx]].Candidates)
+			}
 
-	for {
-		// Check the current combination
-		valueSet := bitset.BitSet16(0)
-		for _, idx := range indices {
-			valueSet = bitset.Union(valueSet, h.Cells[locs[idx]].Candidates)
+			if valueSet.Size() == size {
+				var locValues []int
+				for _, idx := range currentIndices {
+					locValues = append(locValues, locs[idx])
+				}
+				locSet := bitset.FromValues16(locValues...)
+
+				step := NewStep(kind)
+				if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
+					s.applyStep(step.
+						WithIndices(h.indexesFromLocs(locSet.Values())...).
+						WithValues(valueSet.Values()...).
+						WithHouse(h))
+					return true
+				}
+			}
+			return false
 		}
 
-		if valueSet.Size() == size {
-			// Found a subset
-			var locValues []int
-			for _, idx := range indices {
-				locValues = append(locValues, locs[idx])
-			}
-			locSet := bitset.FromValues16(locValues...)
-
-			step := NewStep(kind)
-			if s.eliminateFromOtherLocs(h, valueSet, locSet, step) {
-				s.applyStep(step.
-					WithIndices(h.indexesFromLocs(locSet.Values())...).
-					WithValues(valueSet.Values()...).
-					WithHouse(h))
+		for i := start; i < len(locs); i++ {
+			if checkCombinations(i+1, append(currentIndices, i)) {
 				return true
 			}
 		}
-
-		// Generate next combination
-		// Find the rightmost index that can be incremented
-		i := size - 1
-		for i >= 0 && indices[i] == i+len(locs)-size {
-			i--
-		}
-
-		if i < 0 {
-			break // All combinations generated
-		}
-
-		// Increment the index and adjust all subsequent indices
-		indices[i]++
-		for j := i + 1; j < size; j++ {
-			indices[j] = indices[j-1] + 1
-		}
+		return false
 	}
 
-	return false
+	// Avoid allocation for small known sizes by allocating the initial buffer on the stack.
+	indices := make([]int, 0, size)
+	return checkCombinations(0, indices)
 }
 
 func (s *Solver) findNakedPairs() (found bool) {
