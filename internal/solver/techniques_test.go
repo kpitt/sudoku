@@ -111,3 +111,770 @@ func TestFindTwoStringKite(t *testing.T) {
 		t.Errorf("Candidate 1 should be eliminated from (5,4)")
 	}
 }
+
+func TestFindXWing(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+	val := 1
+
+	setCandidate := func(r, c int) {
+		p.Get(r, c).Candidates.Add(val)
+		s.rows[r].Unsolved[val].Add(c)
+		s.columns[c].Unsolved[val].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[val].Add(boxLoc)
+	}
+
+	// Clear candidates for val 1
+	for r := 0; r < 9; r++ {
+		s.rows[r].Unsolved[val].Clear()
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).RemoveCandidate(val)
+		}
+	}
+	for c := 0; c < 9; c++ {
+		s.columns[c].Unsolved[val].Clear()
+	}
+	for b := 0; b < 9; b++ {
+		s.boxes[b].Unsolved[val].Clear()
+	}
+
+	// X-Wing Setup (Rows as Base)
+	// R1C1, R1C8
+	// R4C1, R4C8
+	setCandidate(1, 1)
+	setCandidate(1, 8)
+	setCandidate(4, 1)
+	setCandidate(4, 8)
+
+	// Target to eliminate (Col 1, not in base rows)
+	setCandidate(0, 1)
+	// Add noise to Row 0 so it has > 2 candidates, preventing it from being
+	// selected as a base line for X-Wing (Size 2).
+	setCandidate(0, 2)
+	setCandidate(0, 3)
+
+	found := s.findXWings()
+	if !found {
+		t.Errorf("X-Wing technique should have been found")
+	}
+
+	if p.Get(0, 1).HasCandidate(val) {
+		t.Errorf("Target (0,1) should have eliminated candidate %d", val)
+	}
+}
+
+func TestFindSwordfish(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+	val := 2
+
+	setCandidate := func(r, c int) {
+		p.Get(r, c).Candidates.Add(val)
+		s.rows[r].Unsolved[val].Add(c)
+		s.columns[c].Unsolved[val].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[val].Add(boxLoc)
+	}
+
+	// Clear candidates for val 2
+	for r := 0; r < 9; r++ {
+		s.rows[r].Unsolved[val].Clear()
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).RemoveCandidate(val)
+		}
+	}
+	for c := 0; c < 9; c++ {
+		s.columns[c].Unsolved[val].Clear()
+	}
+	for b := 0; b < 9; b++ {
+		s.boxes[b].Unsolved[val].Clear()
+	}
+
+	// Swordfish Setup (Rows as Base)
+	// R1: C1, C4
+	// R4: C4, C7
+	// R7: C1, C7
+	setCandidate(1, 1)
+	setCandidate(1, 4)
+	setCandidate(4, 4)
+	setCandidate(4, 7)
+	setCandidate(7, 1)
+	setCandidate(7, 7)
+
+	// Target to eliminate (Col 1, Row 0)
+	setCandidate(0, 1)
+	// Add noise to Row 0 so it has > 3 candidates, preventing it from being
+	// selected as a base line for Swordfish (Size 3).
+	setCandidate(0, 2)
+	setCandidate(0, 3)
+	setCandidate(0, 5)
+
+	found := s.findSwordfish()
+	if !found {
+		t.Errorf("Swordfish technique should have been found")
+	}
+
+	if p.Get(0, 1).HasCandidate(val) {
+		t.Errorf("Target (0,1) should have eliminated candidate %d", val)
+	}
+}
+
+func TestFindJellyfish(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+	val := 3
+
+	setCandidate := func(r, c int) {
+		p.Get(r, c).Candidates.Add(val)
+		s.rows[r].Unsolved[val].Add(c)
+		s.columns[c].Unsolved[val].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[val].Add(boxLoc)
+	}
+
+	// Clear candidates for val 3
+	for r := 0; r < 9; r++ {
+		s.rows[r].Unsolved[val].Clear()
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).RemoveCandidate(val)
+		}
+	}
+	for c := 0; c < 9; c++ {
+		s.columns[c].Unsolved[val].Clear()
+	}
+	for b := 0; b < 9; b++ {
+		s.boxes[b].Unsolved[val].Clear()
+	}
+
+	// Jellyfish Setup (Rows as Base)
+	// R1: C1, C2, C4, C5
+	// R2: C1, C2, C4, C5
+	// R4: C1, C2, C4, C5
+	// R5: C1, C2, C4, C5
+	rows := []int{1, 2, 4, 5}
+	cols := []int{1, 2, 4, 5}
+
+	for _, r := range rows {
+		for _, c := range cols {
+			setCandidate(r, c)
+		}
+	}
+
+	// Target to eliminate (Col 1, Row 0)
+	setCandidate(0, 1)
+	// Add noise to Row 0 so it has > 4 candidates, preventing it from being
+	// selected as a base line for Jellyfish (Size 4).
+	setCandidate(0, 2)
+	setCandidate(0, 3)
+	setCandidate(0, 6)
+	setCandidate(0, 7)
+	setCandidate(0, 8)
+
+	found := s.findJellyfish()
+	if !found {
+		t.Errorf("Jellyfish technique should have been found")
+	}
+
+	if p.Get(0, 1).HasCandidate(val) {
+		t.Errorf("Target (0,1) should have eliminated candidate %d", val)
+	}
+}
+
+func TestFindXYWing(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	// Clear all candidates
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// XY-Wing Setup
+	// Pivot: (4,4) with candidates {1, 2}
+	setCandidate(4, 4, 1)
+	setCandidate(4, 4, 2)
+
+	// Pincer 1: (4,0) with candidates {1, 3} (Same Row)
+	setCandidate(4, 0, 1)
+	setCandidate(4, 0, 3)
+
+	// Pincer 2: (0,4) with candidates {2, 3} (Same Col)
+	setCandidate(0, 4, 2)
+	setCandidate(0, 4, 3)
+
+	// Target: (0,0) with candidate {3} (Sees both pincers)
+	setCandidate(0, 0, 3)
+
+	found := s.findXYWings()
+	if !found {
+		t.Errorf("XY-Wing technique should have been found")
+	}
+
+	if p.Get(0, 0).HasCandidate(3) {
+		t.Errorf("Target (0,0) should have eliminated candidate 3")
+	}
+}
+
+func TestFindXYZWing(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	// Clear all candidates
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// XYZ-Wing Setup
+	// Pivot: (4,4) with candidates {1, 2, 3}
+	setCandidate(4, 4, 1)
+	setCandidate(4, 4, 2)
+	setCandidate(4, 4, 3)
+
+	// Pincer 1: (4,5) with candidates {1, 3} (Same Row & Box)
+	setCandidate(4, 5, 1)
+	setCandidate(4, 5, 3)
+
+	// Pincer 2: (2,4) with candidates {2, 3} (Same Col, DIFFERENT Box)
+	// (2,4) is in Box 1 (Row 2, Col 4)
+	setCandidate(2, 4, 2)
+	setCandidate(2, 4, 3)
+
+	// Target: (5,4) with candidate {3} (Sees all three)
+	// Sees (4,4) via Col 4 / Box 4
+	// Sees (4,5) via Box 4
+	// Sees (2,4) via Col 4
+	setCandidate(5, 4, 3)
+
+	found := s.findXYZWings()
+	if !found {
+		t.Errorf("XYZ-Wing technique should have been found")
+	}
+
+	if p.Get(5, 4).HasCandidate(3) {
+		t.Errorf("Target (5,4) should have eliminated candidate 3")
+	}
+}
+
+func TestFindNakedPairs(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	// Clear all candidates
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// Naked Pair in Row 0: Cells (0,0) and (0,1) with candidates {1, 2}
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 1)
+	setCandidate(0, 1, 2)
+
+	// Other cells in Row 0 that have candidates 1 and 2
+	setCandidate(0, 2, 1) // Target to eliminate
+	setCandidate(0, 3, 2) // Target to eliminate
+
+	// Add other candidates so these cells aren't empty
+	setCandidate(0, 2, 3)
+	setCandidate(0, 3, 4)
+
+	found := s.findNakedPairs()
+	if !found {
+		t.Errorf("Naked Pair technique should have been found")
+	}
+
+	if p.Get(0, 2).HasCandidate(1) {
+		t.Errorf("Target (0,2) should have eliminated candidate 1")
+	}
+	if p.Get(0, 3).HasCandidate(2) {
+		t.Errorf("Target (0,3) should have eliminated candidate 2")
+	}
+}
+
+func TestFindNakedTriples(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// Naked Triple: {1,2}, {2,3}, {1,3}
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 2)
+	setCandidate(0, 1, 3)
+	setCandidate(0, 2, 1)
+	setCandidate(0, 2, 3)
+
+	setCandidate(0, 4, 1) // Target
+	setCandidate(0, 4, 2) // Target
+	setCandidate(0, 4, 4) // Noise
+
+	found := s.findNakedTriples()
+	if !found {
+		t.Errorf("Naked Triple technique should have been found")
+	}
+
+	if p.Get(0, 4).HasCandidate(1) || p.Get(0, 4).HasCandidate(2) {
+		t.Errorf("Target (0,4) should have eliminated candidates 1 and 2")
+	}
+}
+
+func TestFindNakedQuadruples(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 2)
+	setCandidate(0, 1, 3)
+	setCandidate(0, 2, 3)
+	setCandidate(0, 2, 4)
+	setCandidate(0, 3, 1)
+	setCandidate(0, 3, 4)
+
+	setCandidate(0, 5, 1) // Target
+	setCandidate(0, 5, 5) // Noise
+
+	found := s.findNakedQuadruples()
+	if !found {
+		t.Errorf("Naked Quadruple technique should have been found")
+	}
+
+	if p.Get(0, 5).HasCandidate(1) {
+		t.Errorf("Target (0,5) should have eliminated candidate 1")
+	}
+}
+
+func TestFindHiddenPairs(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 1)
+	setCandidate(0, 1, 2)
+
+	setCandidate(0, 0, 3) // Target
+	setCandidate(0, 1, 4) // Target
+
+	setCandidate(0, 2, 3)
+	setCandidate(0, 3, 4)
+	setCandidate(0, 4, 5)
+
+	found := s.findHiddenPairs()
+	if !found {
+		t.Errorf("Hidden Pair technique should have been found")
+	}
+
+	if p.Get(0, 0).HasCandidate(3) {
+		t.Errorf("Target (0,0) should have eliminated candidate 3")
+	}
+	if p.Get(0, 1).HasCandidate(4) {
+		t.Errorf("Target (0,1) should have eliminated candidate 4")
+	}
+}
+
+func TestFindHiddenTriples(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 2)
+	setCandidate(0, 1, 3)
+	setCandidate(0, 2, 1)
+	setCandidate(0, 2, 3)
+
+	setCandidate(0, 0, 4) // Target
+	setCandidate(0, 1, 5) // Target
+	setCandidate(0, 2, 6) // Target
+
+	setCandidate(0, 3, 4)
+	setCandidate(0, 3, 5)
+	setCandidate(0, 4, 5)
+	setCandidate(0, 4, 6)
+
+	found := s.findHiddenTriples()
+	if !found {
+		t.Errorf("Hidden Triple technique should have been found")
+	}
+
+	if p.Get(0, 0).HasCandidate(4) {
+		t.Errorf("Target (0,0) should have eliminated candidate 4")
+	}
+	if p.Get(0, 1).HasCandidate(5) {
+		t.Errorf("Target (0,1) should have eliminated candidate 5")
+	}
+	if p.Get(0, 2).HasCandidate(6) {
+		t.Errorf("Target (0,2) should have eliminated candidate 6")
+	}
+}
+
+func TestFindHiddenQuadruples(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 2)
+	setCandidate(0, 1, 3)
+	setCandidate(0, 2, 3)
+	setCandidate(0, 2, 4)
+	setCandidate(0, 3, 1)
+	setCandidate(0, 3, 4)
+
+	setCandidate(0, 0, 5) // Target
+	setCandidate(0, 1, 6) // Target
+
+	setCandidate(0, 4, 5)
+	setCandidate(0, 4, 6)
+	setCandidate(0, 5, 7)
+	setCandidate(0, 5, 8)
+
+	found := s.findHiddenQuadruples()
+	if !found {
+		t.Errorf("Hidden Quadruple technique should have been found")
+	}
+
+	if p.Get(0, 0).HasCandidate(5) {
+		t.Errorf("Target (0,0) should have eliminated candidate 5")
+	}
+	if p.Get(0, 1).HasCandidate(6) {
+		t.Errorf("Target (0,1) should have eliminated candidate 6")
+	}
+}
+
+func TestFindHiddenSingles(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// Setup: Candidate 1 is only in (0,0) for Row 0
+	setCandidate(0, 0, 1)
+
+	// Add other candidates to (0,0) so it's not a Naked Single
+	setCandidate(0, 0, 2)
+	setCandidate(0, 0, 3)
+
+	// Other cells in Row 0 get candidates 2 and 3, but NOT 1
+	setCandidate(0, 1, 2)
+	setCandidate(0, 1, 3)
+	setCandidate(0, 2, 2)
+	setCandidate(0, 2, 3)
+
+	found := s.findHiddenSingles()
+	if !found {
+		t.Errorf("Hidden Single technique should have been found")
+	}
+
+	// Because finding a Hidden Single places the value, the cell should be
+	// marked as solved with the value 1.
+	if !p.Get(0, 0).IsSolved() {
+		t.Errorf("Hidden Single should have placed a value in cell (0,0)")
+	} else if p.Get(0, 0).Value() != 1 {
+		t.Errorf("Hidden Single should have placed value 1 in cell (0,0)")
+	}
+}
+
+func TestFindPointingTuples(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// Setup: Candidate 1 in Box 0 is restricted to Row 0
+	setCandidate(0, 0, 1)
+	setCandidate(0, 1, 1)
+
+	// Add noise to avoid singles
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 3)
+
+	// Target to eliminate in Row 0, outside Box 0
+	setCandidate(0, 3, 1)
+	setCandidate(0, 3, 4) // Noise
+
+	found := s.findPointingTuples()
+	if !found {
+		t.Errorf("Pointing Tuples technique should have been found")
+	}
+
+	if p.Get(0, 3).HasCandidate(1) {
+		t.Errorf("Target (0,3) should have eliminated candidate 1")
+	}
+}
+
+func TestFindClaimingTuples(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// Setup: Candidate 1 in Row 0 is restricted to Box 0
+	setCandidate(0, 0, 1)
+	setCandidate(0, 1, 1)
+
+	// Add noise to avoid singles
+	setCandidate(0, 0, 2)
+	setCandidate(0, 1, 3)
+
+	// Target to eliminate in Box 0, outside Row 0
+	setCandidate(1, 0, 1)
+	setCandidate(1, 0, 4) // Noise
+
+	found := s.findClaimingTuples()
+	if !found {
+		t.Errorf("Claiming Tuples technique should have been found")
+	}
+
+	if p.Get(1, 0).HasCandidate(1) {
+		t.Errorf("Target (1,0) should have eliminated candidate 1")
+	}
+}
+
+func TestFindUniqueRectangleType1(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// Setup: Unique Rectangle (UR) Type 1
+	// The 4 corners must be in exactly 2 rows, 2 columns, and 2 boxes.
+	// For Type 1, three corners have exactly candidates {X, Y}.
+	// The fourth corner has candidates {X, Y, Z}, we can eliminate X and Y.
+	// We'll use Cells (0,0), (0,3), (1,0), and (1,3).
+	// Row 0 and Row 1 (2 rows).
+	// Col 0 and Col 3 (2 columns).
+	// Boxes 0 and 1 (2 boxes).
+
+	// Bivalue cells: {1, 2}
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2) // Base
+	setCandidate(0, 3, 1)
+	setCandidate(0, 3, 2) // Row Wing
+	setCandidate(1, 0, 1)
+	setCandidate(1, 0, 2) // Col Wing
+
+	// Fourth corner with extra candidates
+	setCandidate(1, 3, 1) // Target to eliminate
+	setCandidate(1, 3, 2) // Target to eliminate
+	setCandidate(1, 3, 3)
+	setCandidate(1, 3, 4)
+
+	found := s.findUniqueRectangleType1()
+	if !found {
+		t.Errorf("Unique Rectangle Type 1 technique should have been found")
+	}
+
+	if p.Get(1, 3).HasCandidate(1) || p.Get(1, 3).HasCandidate(2) {
+		t.Errorf("Target (1,3) should have eliminated candidates 1 and 2")
+	}
+}
