@@ -822,3 +822,59 @@ func TestFindClaimingTuples(t *testing.T) {
 		t.Errorf("Target (1,0) should have eliminated candidate 1")
 	}
 }
+
+func TestFindUniqueRectangleType1(t *testing.T) {
+	p := puzzle.NewPuzzle()
+	s := NewSolver(p, nil)
+
+	setCandidate := func(r, c, v int) {
+		p.Get(r, c).Candidates.Add(v)
+		s.rows[r].Unsolved[v].Add(c)
+		s.columns[c].Unsolved[v].Add(r)
+		_, boxLoc := getBoxLoc(r, c)
+		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
+	}
+
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			p.Get(r, c).Candidates.Clear()
+			for v := 1; v <= 9; v++ {
+				s.rows[r].Unsolved[v].Clear()
+				s.columns[c].Unsolved[v].Clear()
+				s.boxes[p.Get(r, c).Box()].Unsolved[v].Clear()
+			}
+		}
+	}
+
+	// Setup: Unique Rectangle (UR) Type 1
+	// The 4 corners must be in exactly 2 rows, 2 columns, and 2 boxes.
+	// For Type 1, three corners have exactly candidates {X, Y}.
+	// The fourth corner has candidates {X, Y, Z}, we can eliminate X and Y.
+	// We'll use Cells (0,0), (0,3), (1,0), and (1,3).
+	// Row 0 and Row 1 (2 rows).
+	// Col 0 and Col 3 (2 columns).
+	// Boxes 0 and 1 (2 boxes).
+
+	// Bivalue cells: {1, 2}
+	setCandidate(0, 0, 1)
+	setCandidate(0, 0, 2) // Base
+	setCandidate(0, 3, 1)
+	setCandidate(0, 3, 2) // Row Wing
+	setCandidate(1, 0, 1)
+	setCandidate(1, 0, 2) // Col Wing
+
+	// Fourth corner with extra candidates
+	setCandidate(1, 3, 1) // Target to eliminate
+	setCandidate(1, 3, 2) // Target to eliminate
+	setCandidate(1, 3, 3)
+	setCandidate(1, 3, 4)
+
+	found := s.findUniqueRectangleType1()
+	if !found {
+		t.Errorf("Unique Rectangle Type 1 technique should have been found")
+	}
+
+	if p.Get(1, 3).HasCandidate(1) || p.Get(1, 3).HasCandidate(2) {
+		t.Errorf("Target (1,3) should have eliminated candidates 1 and 2")
+	}
+}
