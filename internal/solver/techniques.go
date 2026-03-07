@@ -353,11 +353,13 @@ func (s *Solver) checkPointingTuplesForBox(box *House) (found bool) {
 	return false
 }
 
-func (s *Solver) findHiddenPairs() (found bool) {
-	return slices.ContainsFunc(s.houses, s.checkHiddenPairsForHouse)
+func (s *Solver) findHiddenSubsets(size int, kind techniqueKind) (found bool) {
+	return slices.ContainsFunc(s.houses, func(h *House) bool {
+		return s.checkHiddenSubsetsForHouse(size, kind, h)
+	})
 }
 
-func (s *Solver) checkHiddenPairsForHouse(h *House) (found bool) {
+func (s *Solver) checkHiddenSubsetsForHouse(size int, kind techniqueKind, h *House) (found bool) {
 	var valBuf [9]int
 	values := valBuf[:0]
 	for val := 1; val <= 9; val++ {
@@ -365,40 +367,54 @@ func (s *Solver) checkHiddenPairsForHouse(h *House) (found bool) {
 		if locs.Empty() {
 			continue
 		}
-		if locs.Size() == 2 {
+		if locs.Size() >= 2 && locs.Size() <= size {
 			values = append(values, val)
 		}
 	}
 
-	if len(values) < 2 {
-		// We need at least 2 candidate values to have a pair.
+	if len(values) < size {
+		// We need at least `size` candidate values to have a subset of that size.
 		return false
 	}
 
-	for i := 0; i < len(values)-1; i++ {
-		for j := i + 1; j < len(values); j++ {
-			x, y := values[i], values[j]
-			locsX, locsY := h.Unsolved[x], h.Unsolved[y]
-			locSet := bitset.Union(locsX, locsY)
-			if locSet.Size() != 2 {
-				// If the union of the location sets does not have exactly 2 elements, then
-				// this is not a hidden pair.
-				continue
+	var checkCombinations func(start int, currentIndices []int) bool
+	checkCombinations = func(start int, currentIndices []int) bool {
+		if len(currentIndices) == size {
+			locSet := bitset.BitSet16(0)
+			valueSet := bitset.BitSet16(0)
+			for _, idx := range currentIndices {
+				val := values[idx]
+				locSet = bitset.Union(locSet, h.Unsolved[val])
+				valueSet.Add(val)
 			}
 
-			valueSet := bitset.FromValues16(x, y)
-			step := NewStep(kindHiddenPair)
-			if s.eliminateOtherValues(h, valueSet, locSet, step) {
-				s.applyStep(step.
-					WithIndices(h.indexesFromLocs(locSet.Values())...).
-					WithValues(valueSet.Values()...).
-					WithHouse(h))
+			if locSet.Size() == size {
+				step := NewStep(kind)
+				if s.eliminateOtherValues(h, valueSet, locSet, step) {
+					s.applyStep(step.
+						WithIndices(h.indexesFromLocs(locSet.Values())...).
+						WithValues(valueSet.Values()...).
+						WithHouse(h))
+					return true
+				}
+			}
+			return false
+		}
+
+		for i := start; i < len(values); i++ {
+			if checkCombinations(i+1, append(currentIndices, i)) {
 				return true
 			}
 		}
+		return false
 	}
 
-	return false
+	indices := make([]int, 0, size)
+	return checkCombinations(0, indices)
+}
+
+func (s *Solver) findHiddenPairs() (found bool) {
+	return s.findHiddenSubsets(2, kindHiddenPair)
 }
 
 // eliminateOtherValues removes candidates that are not listed in values from
@@ -430,53 +446,7 @@ func (s *Solver) findNakedTriples() (found bool) {
 }
 
 func (s *Solver) findHiddenTriples() (found bool) {
-	return slices.ContainsFunc(s.houses, s.checkHiddenTriplesForHouse)
-}
-
-func (s *Solver) checkHiddenTriplesForHouse(h *House) (found bool) {
-	var valBuf [9]int
-	values := valBuf[:0]
-	for val := 1; val <= 9; val++ {
-		locs := h.Unsolved[val]
-		if locs.Empty() {
-			continue
-		}
-		if locs.Size() == 2 || locs.Size() == 3 {
-			values = append(values, val)
-		}
-	}
-
-	if len(values) < 3 {
-		// We need at least 3 candidate values to have a triple.
-		return false
-	}
-
-	for i := 0; i < len(values)-2; i++ {
-		for j := i + 1; j < len(values)-1; j++ {
-			for k := j + 1; k < len(values); k++ {
-				x, y, z := values[i], values[j], values[k]
-				locsX, locsY, locsZ := h.Unsolved[x], h.Unsolved[y], h.Unsolved[z]
-				locSet := bitset.Union(locsX, locsY, locsZ)
-				if locSet.Size() != 3 {
-					// If the union of the location sets does not have exactly 3 elements, then
-					// this is not a hidden triple.
-					continue
-				}
-
-				valueSet := bitset.FromValues16(x, y, z)
-				step := NewStep(kindHiddenTriple)
-				if s.eliminateOtherValues(h, valueSet, locSet, step) {
-					s.applyStep(step.
-						WithIndices(h.indexesFromLocs(locSet.Values())...).
-						WithValues(valueSet.Values()...).
-						WithHouse(h))
-					return true
-				}
-			}
-		}
-	}
-
-	return false
+	return s.findHiddenSubsets(3, kindHiddenTriple)
 }
 
 func (s *Solver) findNakedQuadruples() (found bool) {
@@ -722,55 +692,7 @@ func (s *Solver) eliminateXYZWingCells(xyzCell, xzCell, yzCell *puzzle.Cell, ste
 }
 
 func (s *Solver) findHiddenQuadruples() (found bool) {
-	return slices.ContainsFunc(s.houses, s.checkHiddenQuadruplesForHouse)
-}
-
-func (s *Solver) checkHiddenQuadruplesForHouse(h *House) (found bool) {
-	var valBuf [9]int
-	values := valBuf[:0]
-	for val := 1; val <= 9; val++ {
-		locs := h.Unsolved[val]
-		if locs.Empty() {
-			continue
-		}
-		if locs.Size() == 2 || locs.Size() == 3 || locs.Size() == 4 {
-			values = append(values, val)
-		}
-	}
-
-	if len(values) < 4 {
-		// We need at least 4 candidate values to have a quadruple.
-		return false
-	}
-
-	for i := 0; i < len(values)-3; i++ {
-		for j := i + 1; j < len(values)-2; j++ {
-			for k := j + 1; k < len(values)-1; k++ {
-				for n := k + 1; n < len(values); n++ {
-					w, x, y, z := values[i], values[j], values[k], values[n]
-					locsW, locsX, locsY, locsZ := h.Unsolved[w], h.Unsolved[x], h.Unsolved[y], h.Unsolved[z]
-					locSet := bitset.Union(locsW, locsX, locsY, locsZ)
-					if locSet.Size() != 4 {
-						// If the union of the location sets does not have exactly 4 elements, then
-						// this is not a hidden quadruple.
-						continue
-					}
-
-					valueSet := bitset.FromValues16(w, x, y, z)
-					step := NewStep(kindHiddenQuadruple)
-					if s.eliminateOtherValues(h, valueSet, locSet, step) {
-						s.applyStep(step.
-							WithIndices(h.indexesFromLocs(locSet.Values())...).
-							WithValues(valueSet.Values()...).
-							WithHouse(h))
-						return true
-					}
-				}
-			}
-		}
-	}
-
-	return false
+	return s.findHiddenSubsets(4, kindHiddenQuadruple)
 }
 
 // FISH TECHNIQUES
