@@ -79,14 +79,13 @@ func NewSolver(p *puzzle.Puzzle, opts *Options) *Solver {
 	}
 
 	// Collect the cells that belong to each house.
-	for r := range 9 {
-		for c := range 9 {
-			cell := p.Get(r, c)
-			s.rows[r].Cells[c] = cell
-			s.columns[c].Cells[r] = cell
-			box, loc := getBoxLoc(r, c)
-			s.boxes[box].Cells[loc] = cell
-		}
+	for i := range 81 {
+		cell := p.Cell(i)
+		r, c := i/9, i%9
+		s.rows[r].Cells[c] = cell
+		s.columns[c].Cells[r] = cell
+		box, loc := getBoxLoc(r, c)
+		s.boxes[box].Cells[loc] = cell
 	}
 
 	return s

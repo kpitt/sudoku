@@ -11,27 +11,24 @@ func TestDancingLinksBasic(t *testing.T) {
 	b := puzzle.NewPuzzle()
 
 	// Set up a partially filled puzzle
-	testPuzzle := [][]int{
-		{5, 3, 0, 0, 7, 0, 0, 0, 0},
-		{6, 0, 0, 1, 9, 5, 0, 0, 0},
-		{0, 9, 8, 0, 0, 0, 0, 6, 0},
-		{8, 0, 0, 0, 6, 0, 0, 0, 3},
-		{4, 0, 0, 8, 0, 3, 0, 0, 1},
-		{7, 0, 0, 0, 2, 0, 0, 0, 6},
-		{0, 6, 0, 0, 0, 0, 2, 8, 0},
-		{0, 0, 0, 4, 1, 9, 0, 0, 5},
-		{0, 0, 0, 0, 8, 0, 0, 7, 9},
+	testPuzzle := [81]int{
+		5, 3, 0, 0, 7, 0, 0, 0, 0,
+		6, 0, 0, 1, 9, 5, 0, 0, 0,
+		0, 9, 8, 0, 0, 0, 0, 6, 0,
+		8, 0, 0, 0, 6, 0, 0, 0, 3,
+		4, 0, 0, 8, 0, 3, 0, 0, 1,
+		7, 0, 0, 0, 2, 0, 0, 0, 6,
+		0, 6, 0, 0, 0, 0, 2, 8, 0,
+		0, 0, 0, 4, 1, 9, 0, 0, 5,
+		0, 0, 0, 0, 8, 0, 0, 7, 9,
 	}
 
 	// Fill the puzzle grid with the test puzzle values
 	givenCount := 0
-	for r := range 9 {
-		for c := range 9 {
-			// TODO: r,c or index?
-			if testPuzzle[r][c] != 0 {
-				b.Get(r, c).GivenValue(testPuzzle[r][c])
-				givenCount++
-			}
+	for i := range 81 {
+		if testPuzzle[i] != 0 {
+			b.Cell(i).GivenValue(testPuzzle[i])
+			givenCount++
 		}
 	}
 

@@ -79,27 +79,24 @@ func (dl *DancingLinks) buildMatrix() {
 	// Also create map for recording the candidate represented by each row.
 	dl.candidates = make(map[int]Candidate)
 
-	for r := range 9 {
-		for c := range 9 {
-			// TODO: r,c or index?
-			cell := dl.Puzzle.Get(r, c)
+	for i := range 81 {
+		cell := dl.Puzzle.Cell(i)
 
-			if cell.IsSolved() {
-				// Cell is already solved, so get the constraint columns for the
-				// solved value and remove them from the matrix.
-				val := cell.Value()
-				constraints := dl.getConstraintColumns(r, c, val, columns)
-				for _, col := range constraints {
-					col.Right.Left = col.Left
-					col.Left.Right = col.Right
-				}
-			} else {
-				// Create rows for all possible values this cell can have.
-				for val := 1; val <= 9; val++ {
-					if cell.HasCandidate(val) {
-						row := dl.createRowNodes(r, c, val, columns)
-						dl.Rows = append(dl.Rows, row)
-					}
+		if cell.IsSolved() {
+			// Cell is already solved, so get the constraint columns for the
+			// solved value and remove them from the matrix.
+			val := cell.Value()
+			constraints := dl.getConstraintColumns(i, val, columns)
+			for _, col := range constraints {
+				col.Right.Left = col.Left
+				col.Left.Right = col.Right
+			}
+		} else {
+			// Create rows for all possible values this cell can have.
+			for val := 1; val <= 9; val++ {
+				if cell.HasCandidate(val) {
+					row := dl.createRowNodes(i, val, columns)
+					dl.Rows = append(dl.Rows, row)
 				}
 			}
 		}
@@ -107,10 +104,11 @@ func (dl *DancingLinks) buildMatrix() {
 }
 
 // getConstraintColumns returns the four constraint column nodes for a
-// (row, col, value) combination.
-func (dl *DancingLinks) getConstraintColumns(r, c, val int, columns []*ColumnNode) []*ColumnNode {
+// given cell index and value.
+func (dl *DancingLinks) getConstraintColumns(idx, val int, columns []*ColumnNode) []*ColumnNode {
+	r, c := idx/9, idx%9
 	// Calculate column indices for the four constraints
-	cellConstraint := r*9 + c
+	cellConstraint := idx
 	rowConstraint := 81 + r*9 + (val - 1)
 	colConstraint := 162 + c*9 + (val - 1)
 	boxConstraint := 243 + (r/3*3+c/3)*9 + (val - 1)
@@ -123,14 +121,14 @@ func (dl *DancingLinks) getConstraintColumns(r, c, val int, columns []*ColumnNod
 	}
 }
 
-// createRowNodes creates the four nodes for a (row, col, value) combination and
+// createRowNodes creates the four nodes for a given cell index and value and
 // returns the first node in the row, which will serve as the head of the row.
-func (dl *DancingLinks) createRowNodes(r, c, val int, columns []*ColumnNode) (head *Node) {
-	constraintCols := dl.getConstraintColumns(r, c, val, columns)
+func (dl *DancingLinks) createRowNodes(idx, val int, columns []*ColumnNode) (head *Node) {
+	constraintCols := dl.getConstraintColumns(idx, val, columns)
 	nodes := make([]*Node, 4)
 	rowID := len(dl.Rows)
 	// Record the candidate for this row ID
-	dl.candidates[rowID] = Candidate{Index: r*9 + c, Value: val}
+	dl.candidates[rowID] = Candidate{Index: idx, Value: val}
 
 	// Create nodes for each constraint
 	for i, col := range constraintCols {

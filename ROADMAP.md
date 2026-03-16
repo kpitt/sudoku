@@ -89,5 +89,7 @@ classified by human difficulty.
 ### Phase 3: Algorithm Optimization
 
 - [ ] **Bitwise Techniques**: Rewrite all solver techniques to use bitwise logic (POPCNT, AND, OR, XOR).
+    - Bitwise logic must be implemented in the `internal/bitset.BitSet16` type, using short inlinable function wrappers.
+    - Use type aliases in the `internal/solver` package to provide semantic names (e.g., `ValSet` and `LocSet`) for the `BitSet16` type.
 - [ ] **Branchless Iteration**: Update loops to use fixed-size array iteration.
 - [ ] **Stack Allocation**: Ensure the main `Solver` and `Board` structs fit entirely on the stack.

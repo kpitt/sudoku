@@ -994,16 +994,13 @@ func (s *Solver) findUniqueRectangleType1() (found bool) {
 	b := s.puzzle
 	// Check each cell with exactly 2 candidate values to see if it is the base
 	// corner of a unique rectangle.
-	for r := range 9 {
-		for c := range 9 {
-			// TODO: r,c or index?
-			cell := b.Get(r, c)
-			if cell.NumCandidates() != 2 {
-				continue
-			}
-			if s.checkUniqueRectangleForCell(cell) {
-				return true
-			}
+	for i := range 81 {
+		cell := b.Cell(i)
+		if cell.NumCandidates() != 2 {
+			continue
+		}
+		if s.checkUniqueRectangleForCell(cell) {
+			return true
 		}
 	}
 
