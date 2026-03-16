@@ -33,17 +33,17 @@ func TestFindSkyscraper(t *testing.T) {
 
 	// Prepare state:
 	// Clear all candidates for val 1 first
-	for r := 0; r < 9; r++ {
+	for r := range 9 {
 		s.rows[r].Unsolved[val].Clear()
-		for c := 0; c < 9; c++ {
+		for c := range 9 {
 			p.Get(r, c).RemoveCandidate(val)
 		}
 	}
 	// Also clear nums for cols/boxes for consistency
-	for c := 0; c < 9; c++ {
+	for c := range 9 {
 		s.columns[c].Unsolved[val].Clear()
 	}
-	for b := 0; b < 9; b++ {
+	for b := range 9 {
 		s.boxes[b].Unsolved[val].Clear()
 	}
 
@@ -83,16 +83,16 @@ func TestFindTwoStringKite(t *testing.T) {
 	}
 
 	// Clear candidates for val 1
-	for r := 0; r < 9; r++ {
+	for r := range 9 {
 		s.rows[r].Unsolved[val].Clear()
-		for c := 0; c < 9; c++ {
+		for c := range 9 {
 			p.Get(r, c).RemoveCandidate(val)
 		}
 	}
-	for c := 0; c < 9; c++ {
+	for c := range 9 {
 		s.columns[c].Unsolved[val].Clear()
 	}
-	for b := 0; b < 9; b++ {
+	for b := range 9 {
 		s.boxes[b].Unsolved[val].Clear()
 	}
 
@@ -126,16 +126,16 @@ func TestFindXWing(t *testing.T) {
 	}
 
 	// Clear candidates for val 1
-	for r := 0; r < 9; r++ {
+	for r := range 9 {
 		s.rows[r].Unsolved[val].Clear()
-		for c := 0; c < 9; c++ {
+		for c := range 9 {
 			p.Get(r, c).RemoveCandidate(val)
 		}
 	}
-	for c := 0; c < 9; c++ {
+	for c := range 9 {
 		s.columns[c].Unsolved[val].Clear()
 	}
-	for b := 0; b < 9; b++ {
+	for b := range 9 {
 		s.boxes[b].Unsolved[val].Clear()
 	}
 
@@ -178,16 +178,16 @@ func TestFindSwordfish(t *testing.T) {
 	}
 
 	// Clear candidates for val 2
-	for r := 0; r < 9; r++ {
+	for r := range 9 {
 		s.rows[r].Unsolved[val].Clear()
-		for c := 0; c < 9; c++ {
+		for c := range 9 {
 			p.Get(r, c).RemoveCandidate(val)
 		}
 	}
-	for c := 0; c < 9; c++ {
+	for c := range 9 {
 		s.columns[c].Unsolved[val].Clear()
 	}
-	for b := 0; b < 9; b++ {
+	for b := range 9 {
 		s.boxes[b].Unsolved[val].Clear()
 	}
 
@@ -234,16 +234,16 @@ func TestFindJellyfish(t *testing.T) {
 	}
 
 	// Clear candidates for val 3
-	for r := 0; r < 9; r++ {
+	for r := range 9 {
 		s.rows[r].Unsolved[val].Clear()
-		for c := 0; c < 9; c++ {
+		for c := range 9 {
 			p.Get(r, c).RemoveCandidate(val)
 		}
 	}
-	for c := 0; c < 9; c++ {
+	for c := range 9 {
 		s.columns[c].Unsolved[val].Clear()
 	}
-	for b := 0; b < 9; b++ {
+	for b := range 9 {
 		s.boxes[b].Unsolved[val].Clear()
 	}
 
@@ -294,8 +294,8 @@ func TestFindXYWing(t *testing.T) {
 	}
 
 	// Clear all candidates
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -344,8 +344,8 @@ func TestFindXYZWing(t *testing.T) {
 	}
 
 	// Clear all candidates
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -399,8 +399,8 @@ func TestFindNakedPairs(t *testing.T) {
 	}
 
 	// Clear all candidates
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -449,8 +449,8 @@ func TestFindNakedTriples(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -494,8 +494,8 @@ func TestFindNakedQuadruples(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -539,8 +539,8 @@ func TestFindHiddenPairs(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -587,8 +587,8 @@ func TestFindHiddenTriples(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -642,8 +642,8 @@ func TestFindHiddenQuadruples(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -695,8 +695,8 @@ func TestFindHiddenSingles(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -745,8 +745,8 @@ func TestFindPointingTuples(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -790,8 +790,8 @@ func TestFindClaimingTuples(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()
@@ -835,8 +835,8 @@ func TestFindUniqueRectangleType1(t *testing.T) {
 		s.boxes[p.Get(r, c).Box()].Unsolved[v].Add(boxLoc)
 	}
 
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := range 9 {
+		for c := range 9 {
 			p.Get(r, c).Candidates.Clear()
 			for v := 1; v <= 9; v++ {
 				s.rows[r].Unsolved[v].Clear()

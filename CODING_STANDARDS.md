@@ -15,6 +15,7 @@
   small, immutable types.
 - **Generics:** Use generics where appropriate to reduce code duplication.
 - **Language Features:** Use the latest language features up to and including Go 1.25.
+  - Use modern `range` loops (e.g., `for i := range limit`) where applicable instead of the legacy structural form (`for i := 0; i < limit; i++`).
 - **Maintenance:** Always run `go mod tidy` after adding dependencies.
 
 ## Tech Stack & Frameworks

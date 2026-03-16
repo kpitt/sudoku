@@ -816,7 +816,7 @@ func (s *Solver) checkSkyscraper(baseLines []*House) (found bool) {
 		}
 
 		// Check each pair of candidate lines to see if they form a Skyscraper.
-		for i := 0; i < len(candidates)-1; i++ {
+		for i := range len(candidates)-1 {
 			base1 := candidates[i]
 			for j := i + 1; j < len(candidates); j++ {
 				base2 := candidates[j]
