@@ -155,7 +155,7 @@ func TestDancingLinksChooseColumn(t *testing.T) {
 
 	chosen := dl.chooseColumn()
 	if chosen == nil {
-		t.Error("chooseColumn returned nil")
+		t.Fatal("chooseColumn returned nil")
 	}
 
 	// Verify that chosen column has minimum size
